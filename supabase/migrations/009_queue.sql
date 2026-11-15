@@ -90,10 +90,12 @@ create policy "queue_select_admin"
 -- 3. RPC: DAFTARKAN ANTRIAN BARU (nomor harian atomik)
 -- ---------------------------------------------------------------------------
 create or replace function public.create_queue_entry(
+  -- Aturan Postgres: parameter TANPA default harus di atas parameter
+  -- ber-default, maka p_vehicle_type (wajib) diletakkan pertama.
+  p_vehicle_type   text,
   p_customer_name  text default null,
   p_customer_phone text default null,
   p_plate_number   text default null,
-  p_vehicle_type   text,
   p_service_id     uuid default null,
   p_note           text default null
 )
