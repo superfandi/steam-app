@@ -134,6 +134,25 @@ export interface ReportData {
 }
 
 /* ------------------------------------------------------------------ */
+/* RPC get_revenue_history — deret harian untuk prediksi omzet          */
+/* ------------------------------------------------------------------ */
+
+export interface RevenueHistoryPoint {
+  /** Tanggal WIB "yyyy-mm-dd". */
+  day: string
+  /** Total pendapatan lunas hari itu (hari tanpa transaksi = 0). */
+  revenue: number
+  transaction_count: number
+}
+
+export interface RevenueHistory {
+  start_date: string
+  end_date: string
+  /** Deret kontinu dari start_date s.d. end_date (hari kosong = 0). */
+  daily: RevenueHistoryPoint[]
+}
+
+/* ------------------------------------------------------------------ */
 /* RPC create_transaction                                              */
 /* ------------------------------------------------------------------ */
 

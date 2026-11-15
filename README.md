@@ -17,6 +17,7 @@ Dibangun dengan React + TypeScript + Vite + Tailwind CSS + shadcn/ui, dengan Sup
 | **Karyawan** | CRUD karyawan pengerjakan (telepon, jabatan), persen komisi per karyawan, aktif/nonaktif |
 | **Komisi** | Komisi dihitung otomatis di database saat checkout (persen × total setelah diskon, snapshot), laporan per karyawan + rincian transaksi + export CSV, kartu komisi hari ini di dashboard |
 | **Laporan** | Preset periode + rentang kustom (zona WIB), grafik harian, breakdown metode bayar, rekap harian, **export CSV** (ringkasan & per-transaksi) |
+| **Prediksi Omzet** | Holt-Winters aditif (musiman mingguan, dihitung di frontend tanpa API) — proyeksi 7/14/30 hari + pita ±1σ + metrik akurasi MAPE/MAE dari backtest |
 
 ## Teknologi
 
@@ -46,6 +47,7 @@ Dibangun dengan React + TypeScript + Vite + Tailwind CSS + shadcn/ui, dengan Sup
    | 4 | `supabase/migrations/004_seed.sql` | 8 layanan contoh motor & mobil (idempotent) |
    | 5 | `supabase/migrations/005_employees.sql` | Tabel `employees` (karyawan + persen komisi) + RLS admin-only |
    | 6 | `supabase/migrations/006_transaction_commission.sql` | Kolom komisi di `transactions`, update RPC `create_transaction` (hitung & snapshot komisi di database), RPC `get_commission_report`, `get_dashboard_summary` + `today_commission` |
+   | 7 | `supabase/migrations/007_forecast.sql` | RPC `get_revenue_history(p_days)` — deret pendapatan harian WIB (hanya lunas, hari kosong = 0) untuk prediksi omzet |
 
 3. **Pengaturan keamanan penting** — buka **Authentication → Providers → Email**
    dan **matikan "Allow new users to sign up"**. Setiap user auth baru otomatis
@@ -96,18 +98,24 @@ src/
 ├── components/
 │   ├── pos/                 # ServiceCard, CheckoutConfirmDialog, CheckoutSuccessDialog, Receipt
 │   ├── history/             # CancelTransactionDialog
+│   ├── employees/           # EmployeeFormDialog
+│   ├── reports/             # RevenueForecastCard (prediksi omzet)
 │   ├── shared/              # PageHeader, StatCard, EmptyState, ErrorState, badges, FullScreenLoader
 │   ├── ui/                  # komponen shadcn/ui
 │   ├── ProtectedRoute.tsx   # guard sesi admin
 │   └── AppErrorBoundary.tsx # batas error aplikasi
 ├── hooks/                   # useAuth, useDashboard, usePosCart, usePosServices,
-│                            # useTransactions, useReport, useDebouncedValue
-├── layouts/AdminLayout.tsx  # sidebar gelap (lg+) + drawer (mobile) + topbar
-├── lib/                     # supabase.ts, format.ts (WIB), constants.ts, periods.ts, csv.ts
-├── pages/                   # Dashboard, Pos, Services, History, HistoryDetail, Reports, Login, NotFound
-├── services/                # transaction.service.ts, services.service.ts, dashboard.service.ts
+│                            # useTransactions, useReport, useForecast, useEmployees,
+│                            # useCommissionReport, useDebouncedValue
+├── layouts/AdminLayout.tsx  # sidebar rail hover-expand (lg+) + drawer (mobile) + topbar
+├── lib/                     # supabase.ts, format.ts (WIB), constants.ts, periods.ts, csv.ts,
+│                            # forecast.ts (Holt-Winters + MAPE), validators.ts, errors.ts
+├── pages/                   # Dashboard, Pos, Services, Employees, History, HistoryDetail,
+│                            # Commissions, Reports, Login, NotFound
+├── services/                # transaction.service.ts, services.service.ts, employee.service.ts,
+│                            # commission.service.ts, auth.service.ts
 └── types/database.types.ts  # tipe hasil skema & RPC
-supabase/migrations/         # 4 file SQL (schema → RLS → RPC → seed)
+supabase/migrations/         # 7 file SQL (schema → RLS → RPC → seed → karyawan → komisi → prediksi)
 ```
 
 ## Model Database
@@ -205,6 +213,12 @@ export CSV memakai tanggal WIB, termasuk kolom `Tanggal (WIB)`.
 - [ ] Footer rekap harian = kartu ringkasan.
 - [ ] Export Ringkasan & Export Transaksi terbuka rapi di Excel (pemisah `;`, BOM).
 
+**Prediksi Omzet** (setelah migrasi 007)
+- [ ] Buka Laporan → kartu "Proyeksi Omzet" tampil: garis riwayat + garis proyeksi putus-putus + pita kisaran.
+- [ ] Ganti horizon 7/14/30 hari → grafik & "Proyeksi N hari" berubah tanpa loading lama (hitung lokal).
+- [ ] Badge MAPE/MAE dan parameter α/β/γ tampil; angka wajar (MAPE < 100% pada data cukup teratur).
+- [ ] Akun baru / data < 21 hari → empty state "Data belum cukup untuk diprediksi".
+
 **Responsif**
 - [ ] Mobile: sidebar jadi drawer, tabel menyembunyikan kolom sekunder, dialog dapat digulir.
 
@@ -220,5 +234,6 @@ export CSV memakai tanggal WIB, termasuk kolom `Tanggal (WIB)`.
 | 6 | Laporan pendapatan + export | ✅ Selesai |
 | 7 | Audit keamanan, code-splitting, responsif, dokumentasi | ✅ Selesai |
 | 8 | Kelola karyawan + komisi otomatis per transaksi | ✅ Selesai |
+| 9 | Prediksi omzet (Holt-Winters + MAPE, tanpa API) | ✅ Selesai |
 
-**Semua fase selesai.** Aplikasi siap diuji end-to-end dan dideploy.
+**Semua fase selesai.** Aplikasi siap diuji end-to-end dan dideploy. (Fase 10: chatbot data admin menyusul.)

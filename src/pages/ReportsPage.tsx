@@ -29,6 +29,7 @@ import { EmptyState } from "@/components/shared/EmptyState"
 import { ErrorState } from "@/components/shared/ErrorState"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { StatCard } from "@/components/shared/StatCard"
+import { RevenueForecastCard } from "@/components/reports/RevenueForecastCard"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -560,6 +561,9 @@ export default function ReportsPage() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Proyeksi omzet */}
+          <RevenueForecastCard />
 
           {/* Rekap harian */}
           {!isEmpty && (
