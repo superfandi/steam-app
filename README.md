@@ -141,6 +141,17 @@ free tier cukup untuk pemakaian admin harian.
 - *"GEMINI_API_KEY belum diatur"* → tambahkan secret di
   **Edge Functions → Secrets** lalu tunggu ±1 menit.
 
+**Editor VS Code menampilkan merah/error di `supabase/functions/chat/index.ts`?**
+Itu normal — VS Code tanpa ekstensi Deno tidak mengenal modul `npm:`/`jsr:`
+dan global `Deno`. Tidak memengaruhi `npm run build` maupun deploy
+(file ini tidak dikompilasi tsc). Solusi rapi: pasang ekstensi
+**Deno** (`denoland.vscode-deno`) — `.vscode/settings.json` di repo sudah
+mengaktifkannya hanya untuk folder `supabase/functions`.
+
+**Arah copy-paste saat deploy**: dari **VS Code → dashboard editor**
+(Ctrl+A, Delete, Ctrl+V di editor dashboard), BUKAN dari dashboard → lokal.
+Menyalin template dashboard ke file lokal akan menimpa kode fungsi chat.
+
 ---
 
 ## Struktur Proyek
