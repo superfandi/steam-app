@@ -9,7 +9,7 @@ Dibangun dengan React + TypeScript + Vite + Tailwind CSS + shadcn/ui, dengan Sup
 | Fase | Ruang Lingkup | Status |
 |------|---------------|--------|
 | 1 | Fondasi proyek + skema database (migrations, RLS, RPC, seed) | ✅ Selesai |
-| 2 | Supabase client, autentikasi admin, layout + sidebar | ⏳ Belum |
+| 2 | Supabase client, autentikasi admin, layout + sidebar | ✅ Selesai |
 | 3 | Dashboard + CRUD layanan | ⏳ Belum |
 | 4 | POS transaksi, invoice, struk | ⏳ Belum |
 | 5 | Riwayat transaksi + pembatalan | ⏳ Belum |
