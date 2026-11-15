@@ -13,7 +13,7 @@ Dibangun dengan React + TypeScript + Vite + Tailwind CSS + shadcn/ui, dengan Sup
 | 3 | Dashboard + CRUD layanan | ✅ Selesai |
 | 4 | POS transaksi, invoice, struk | ✅ Selesai |
 | 5 | Riwayat transaksi + pembatalan | ✅ Selesai |
-| 6 | Laporan pendapatan + export | ⏳ Belum |
+| 6 | Laporan pendapatan + export | ✅ Selesai |
 | 7 | Testing, keamanan, dokumentasi lengkap | ⏳ Belum |
 
 ## Struktur Database (`supabase/migrations`)

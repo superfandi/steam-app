@@ -95,3 +95,9 @@ export function nextDayStartIsoJakarta(dateStr: string): string {
   const start = new Date(`${dateStr}T00:00:00+07:00`)
   return new Date(start.getTime() + 24 * 60 * 60 * 1000).toISOString()
 }
+
+/** "2026-11-15 14:30" (WIB) — untuk file export. */
+export function formatDateTimeWibPlain(iso: string): string {
+  const wib = new Date(new Date(iso).getTime() + 7 * 60 * 60 * 1000)
+  return wib.toISOString().slice(0, 16).replace("T", " ")
+}

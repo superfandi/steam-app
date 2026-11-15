@@ -223,6 +223,56 @@ export async function fetchTransactions(
 }
 
 /* ------------------------------------------------------------------ */
+/* Export CSV laporan: semua transaksi dalam rentang (Asia/Jakarta)    */
+/* ------------------------------------------------------------------ */
+
+const EXPORT_PAGE_SIZE = 1000
+const EXPORT_MAX_PAGES = 100 // pengaman: maks 100.000 baris
+
+/**
+ * Ambil SELURUH transaksi (termasuk yang dibatalkan) dalam rentang
+ * tanggal untuk export CSV. Iterasi pagination server-side sampai habis.
+ *
+ * @param startIsoUtc      batas bawah inklusif (UTC ISO) — tengah malam WIB
+ * @param endExclusiveIso  batas atas eksklusif (UTC ISO) — tengah malam WIB +1 hari
+ */
+export async function fetchTransactionsInRangeForExport(
+  startIsoUtc: string,
+  endExclusiveIso: string,
+): Promise<TransactionRowWithCashier[]> {
+  const allRows: TransactionRowWithCashier[] = []
+
+  for (let pageIndex = 0; pageIndex < EXPORT_MAX_PAGES; pageIndex += 1) {
+    const from = pageIndex * EXPORT_PAGE_SIZE
+    const { data, error } = await supabase
+      .from("transactions")
+      .select("*, cashier:profiles(full_name)")
+      .gte("created_at", startIsoUtc)
+      .lt("created_at", endExclusiveIso)
+      .order("created_at", { ascending: true })
+      .range(from, from + EXPORT_PAGE_SIZE - 1)
+
+    if (error) {
+      console.error("fetchTransactionsInRangeForExport:", error)
+      throw new Error("Gagal mengambil data transaksi untuk export.")
+    }
+
+    const rows = ((data ?? []) as Array<TransactionRow & {
+      cashier: { full_name: string } | null
+    }>).map(({ cashier, ...txn }) => ({
+      ...(txn as TransactionRow),
+      cashierName: cashier?.full_name ?? null,
+    }))
+
+    allRows.push(...rows)
+
+    if (rows.length < EXPORT_PAGE_SIZE) break // halaman terakhir
+  }
+
+  return allRows
+}
+
+/* ------------------------------------------------------------------ */
 /* Pembatalan transaksi (RPC cancel_transaction)                       */
 /* ------------------------------------------------------------------ */
 
