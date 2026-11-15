@@ -4,7 +4,16 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { Navigate, useLocation, useNavigate } from "react-router-dom"
 import { toast } from "sonner"
-import { Droplets, Eye, EyeOff, Loader2, ShieldCheck, Wallet, BarChart3 } from "lucide-react"
+import {
+  Bot,
+  Droplets,
+  Eye,
+  EyeOff,
+  HandCoins,
+  Loader2,
+  ReceiptText,
+  TrendingUp,
+} from "lucide-react"
 
 import { FullScreenLoader } from "@/components/shared/FullScreenLoader"
 import { Button } from "@/components/ui/button"
@@ -13,6 +22,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuth } from "@/hooks/useAuth"
 import { getAuthErrorMessage } from "@/services/auth.service"
+import { cn } from "cn"
 
 const loginSchema = z.object({
   email: z.email({ message: "Format email tidak valid" }),
@@ -26,16 +36,20 @@ type LoginFormValues = {
 
 const HIGHLIGHTS = [
   {
-    icon: ShieldCheck,
-    text: "Transaksi aman — harga selalu diambil dari database",
+    icon: ReceiptText,
+    text: "Kasir cepat — invoice otomatis, struk cetak & kirim via WhatsApp",
   },
   {
-    icon: Wallet,
-    text: "Invoice otomatis & struk siap cetak",
+    icon: HandCoins,
+    text: "Komisi karyawan dihitung & dicatat otomatis saat checkout",
   },
   {
-    icon: BarChart3,
-    text: "Laporan pendapatan harian hingga bulanan",
+    icon: TrendingUp,
+    text: "Laporan pendapatan + export Excel & prediksi omzet",
+  },
+  {
+    icon: Bot,
+    text: "Asisten data AI — tanya pendapatan & komisi langsung di aplikasi",
   },
 ]
 
@@ -85,21 +99,32 @@ export default function LoginPage() {
   return (
     <div className="grid min-h-screen bg-background lg:grid-cols-2">
       {/* ---------------- Panel branding (desktop) ---------------- */}
-      <div className="relative hidden flex-col justify-between bg-sidebar p-10 lg:flex">
-        <div className="flex items-center gap-3">
+      <div className="relative hidden flex-col justify-between overflow-hidden bg-sidebar p-10 lg:flex">
+        {/* Dekorasi latar lembut */}
+        <div
+          className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-primary/25 blur-3xl"
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute -bottom-32 -left-20 h-80 w-80 rounded-full bg-primary/10 blur-3xl"
+          aria-hidden
+        />
+
+        <div className="relative flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
             <Droplets className="h-5 w-5 text-primary-foreground" />
           </div>
           <p className="text-lg font-bold tracking-wide text-white">Pandawa Steam</p>
         </div>
 
-        <div className="space-y-6">
+        <div className="relative space-y-6">
           <h1 className="max-w-md text-3xl leading-snug font-bold text-white">
-            Sistem Point of Sale untuk usaha cuci motor &amp; mobil Anda
+            Kelola usaha cuci motor &amp; mobil Anda — dari kasir hingga
+            laporan
           </h1>
           <p className="max-w-md text-sm text-sidebar-muted">
-            Kelola layanan, transaksi kasir, riwayat, dan laporan pendapatan
-            dalam satu dashboard yang rapi.
+            Pandawa Steam menyatukan kasir POS, riwayat transaksi, komisi
+            karyawan, prediksi omzet, dan asisten data AI dalam satu aplikasi.
           </p>
           <ul className="space-y-3">
             {HIGHLIGHTS.map((item) => (
@@ -116,7 +141,7 @@ export default function LoginPage() {
           </ul>
         </div>
 
-        <p className="text-xs text-sidebar-muted">
+        <p className="relative text-xs text-sidebar-muted">
           © {new Date().getFullYear()} Pandawa Steam. Seluruh hak cipta dilindungi.
         </p>
       </div>
@@ -130,12 +155,18 @@ export default function LoginPage() {
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
                 <Droplets className="h-4 w-4 text-primary-foreground" />
               </div>
-              <p className="text-sm font-bold">Pandawa Steam</p>
+              <div>
+                <p className="text-sm font-bold">Pandawa Steam</p>
+                <p className="text-[11px] text-muted-foreground">
+                  Kasir Cuci Motor &amp; Mobil
+                </p>
+              </div>
             </div>
 
-            <h2 className="text-xl font-bold">Masuk ke akun admin</h2>
+            <h2 className="text-xl font-bold">Selamat datang kembali</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Gunakan email dan password admin yang telah dibuat.
+              Masuk untuk mengelola kasir, riwayat, laporan, dan komisi —
+              satu akun untuk semuanya.
             </p>
 
             {formError && (
@@ -156,7 +187,12 @@ export default function LoginPage() {
                   id="email"
                   type="email"
                   autoComplete="email"
-                  placeholder="admin@washpos.id"
+                  placeholder="admin@pandawasteam.id"
+                  aria-invalid={Boolean(form.formState.errors.email)}
+                  className={cn(
+                    form.formState.errors.email &&
+                      "border-destructive focus-visible:ring-destructive/30",
+                  )}
                   {...form.register("email")}
                 />
                 {form.formState.errors.email?.message && (
@@ -175,7 +211,12 @@ export default function LoginPage() {
                     type={showPassword ? "text" : "password"}
                     autoComplete="current-password"
                     placeholder="••••••••"
-                    className="pr-10"
+                    className={cn(
+                      "pr-10",
+                      form.formState.errors.password &&
+                        "border-destructive focus-visible:ring-destructive/30",
+                    )}
+                    aria-invalid={Boolean(form.formState.errors.password)}
                     {...form.register("password")}
                   />
                   <button
@@ -215,8 +256,8 @@ export default function LoginPage() {
             </form>
 
             <p className="mt-6 text-center text-xs text-muted-foreground">
-              Butuh akun admin? Hubungi pengelola sistem — registrasi mandiri
-              tidak tersedia.
+              Akun admin hanya dibuat oleh pengelola sistem — registrasi
+              mandiri tidak tersedia.
             </p>
           </CardContent>
         </Card>
