@@ -43,6 +43,8 @@ export interface TransactionRow {
   cashier_id: string | null
   customer_name: string | null
   plate_number: string | null
+  /** Nomor WhatsApp pelanggan (format internasional 62…, opsional). */
+  customer_phone: string | null
   vehicle_type: VehicleType
   subtotal: number
   discount: number

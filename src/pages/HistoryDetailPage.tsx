@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { toast } from "sonner"
-import { ArrowLeft, CircleX, Printer, ReceiptText } from "lucide-react"
+import { ArrowLeft, CircleX, MessageCircle, Printer, ReceiptText } from "lucide-react"
 
 import { CancelTransactionDialog } from "@/components/history/CancelTransactionDialog"
 import { FullScreenLoader } from "@/components/shared/FullScreenLoader"
@@ -35,6 +35,10 @@ import {
   type TransactionDetail,
 } from "@/services/transaction.service"
 import { formatDateTime, formatRupiah } from "@/lib/format"
+import {
+  buildWhatsAppReceiptText,
+  sendWhatsAppMessage,
+} from "@/lib/whatsapp"
 
 /**
  * Detail Transaksi:
@@ -122,6 +126,19 @@ export default function HistoryDetailPage() {
   const { transaction, items, cashierName, employeeName } = detail
   const isCancelled = transaction.payment_status === "cancelled"
 
+  /** Kirim ulang struk via WhatsApp memakai nomor tercatat di transaksi. */
+  function handleSendWhatsApp() {
+    const phone = transaction.customer_phone
+    if (!phone) return
+    sendWhatsAppMessage(
+      phone,
+      buildWhatsAppReceiptText(
+        toReceiptData(transaction, items, cashierName, employeeName),
+      ),
+    )
+    toast.success("Struk dibuka di WhatsApp — tinggal tekan kirim.")
+  }
+
   return (
     <div className="mx-auto max-w-5xl">
       {/* ---------------- Header ---------------- */}
@@ -144,6 +161,17 @@ export default function HistoryDetailPage() {
             <Printer className="h-4 w-4" />
             Cetak Struk
           </Button>
+          {!isCancelled && transaction.customer_phone && (
+            <Button
+              variant="outline"
+              className="border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+              onClick={handleSendWhatsApp}
+              title={`Kirim struk ke ${transaction.customer_phone}`}
+            >
+              <MessageCircle className="h-4 w-4" />
+              Kirim via WhatsApp
+            </Button>
+          )}
           {!isCancelled && (
             <Button
               variant="outline"
@@ -181,6 +209,10 @@ export default function HistoryDetailPage() {
               <InfoRow
                 label="No. Polisi"
                 value={transaction.plate_number ?? "—"}
+              />
+              <InfoRow
+                label="No. WhatsApp"
+                value={transaction.customer_phone ?? "—"}
               />
               <InfoRow
                 label="Jenis Kendaraan"

@@ -43,6 +43,8 @@ export interface CreateTransactionPayload {
   discount: number
   customerName: string | null
   plateNumber: string | null
+  /** Nomor WhatsApp pelanggan (opsional) untuk kirim struk. */
+  customerPhone: string | null
   cashReceived: number | null
   /** Karyawan yang mengerjakan (opsional; null = tanpa karyawan). */
   employeeId: string | null
@@ -78,6 +80,7 @@ export async function createTransaction(
     p_discount: input.discount,
     p_customer_name: input.customerName,
     p_plate_number: input.plateNumber,
+    p_customer_phone: input.customerPhone,
     p_cash_received: input.cashReceived,
     p_employee_id: input.employeeId,
   })

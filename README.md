@@ -12,7 +12,7 @@ Dibangun dengan React + TypeScript + Vite + Tailwind CSS + shadcn/ui, dengan Sup
 | **Dashboard** | 4 kartu statistik hari ini, grafik pendapatan 14 hari, ringkasan metode bayar, 8 transaksi terbaru |
 | **Manajemen Layanan** | CRUD layanan motor/mobil, harga Rupiah, pencarian, filter, aktif/nonaktif, proteksi hapus |
 | **Kasir (POS)** | Dua panel (layanan + keranjang), diskon nominal, 3 metode bayar, kembalian otomatis, verifikasi QRIS/Transfer |
-| **Struk** | Pratinjau & cetak thermal 80mm (`window.print()`), banner khusus transaksi dibatalkan |
+| **Struk** | Pratinjau & cetak thermal 80mm (`window.print()`), banner khusus transaksi dibatalkan, **kirim via WhatsApp pelanggan** (`wa.me`, pesan struk terisi otomatis) |
 | **Riwayat** | Pencarian invoice/polisi, filter tanggal–kendaraan–metode–status, pagination server-side, detail + cetak ulang, pembatalan ber-alasan |
 | **Karyawan** | CRUD karyawan pengerjakan (telepon, jabatan), persen komisi per karyawan, aktif/nonaktif |
 | **Komisi** | Komisi dihitung otomatis di database saat checkout (persen × total setelah diskon, snapshot), laporan per karyawan + rincian transaksi + export CSV, kartu komisi hari ini di dashboard |
@@ -51,6 +51,7 @@ Dibangun dengan React + TypeScript + Vite + Tailwind CSS + shadcn/ui, dengan Sup
    | 5 | `supabase/migrations/005_employees.sql` | Tabel `employees` (karyawan + persen komisi) + RLS admin-only |
    | 6 | `supabase/migrations/006_transaction_commission.sql` | Kolom komisi di `transactions`, update RPC `create_transaction` (hitung & snapshot komisi di database), RPC `get_commission_report`, `get_dashboard_summary` + `today_commission` |
    | 7 | `supabase/migrations/007_forecast.sql` | RPC `get_revenue_history(p_days)` — deret pendapatan harian WIB (hanya lunas, hari kosong = 0) untuk prediksi omzet |
+   | 8 | `supabase/migrations/008_transaction_whatsapp.sql` | Kolom `customer_phone` di `transactions` + RPC `create_transaction` menerima `p_customer_phone` (normalisasi 08xx → 628xx) untuk kirim struk via WhatsApp |
 
 3. **Pengaturan keamanan penting** — buka **Authentication → Providers → Email**
    dan **matikan "Allow new users to sign up"**. Setiap user auth baru otomatis
@@ -184,7 +185,7 @@ src/
 ├── services/                # transaction.service.ts, services.service.ts, employee.service.ts,
 │                            # commission.service.ts, auth.service.ts
 └── types/database.types.ts  # tipe hasil skema & RPC
-supabase/migrations/         # 7 file SQL (schema → RLS → RPC → seed → karyawan → komisi → prediksi)
+supabase/migrations/         # 8 file SQL (schema → RLS → RPC → seed → karyawan → komisi → prediksi → WhatsApp)
 supabase/functions/chat/     # Edge Function asisten data (Deno, Gemini function calling)
 ```
 
@@ -238,6 +239,27 @@ export CSV memakai tanggal WIB, termasuk kolom `Tanggal (WIB)`.
 - Transaksi yang dibatalkan mencetak dengan banner merah **TRANSAKSI DIBATALKAN**.
 - Pratinjau browser: atur printer ke ukuran kertas 80mm (roll) & margin none.
 
+## Kirim Struk via WhatsApp
+
+Selain dicetak, struk bisa dikirim ke pelanggan lewat WhatsApp:
+
+1. Isi **No. WhatsApp Pelanggan** (opsional) di form kasir — dinormalisasi ke
+   format internasional `62…` dan tersimpan di kolom `transactions.customer_phone`.
+2. Setelah transaksi tersimpan, dialog sukses menampilkan tombol
+   **Kirim via WhatsApp** — pesan berisi struk (invoice, item, total, metode
+   bayar) sudah terisi; admin tinggal menekan tombol kirim.
+3. Bisa juga dikirim ulang kapan saja dari **Riwayat → Detail Transaksi**
+   bila nomor tercatat (tombol muncul otomatis).
+4. Nomor juga bisa diisi/diedit langsung di dialog sukses (dipakai sekali
+   untuk kirim, tanpa mengubah transaksi — penulisan transaksi memang
+   hanya boleh via RPC).
+
+**Cara kerja & keamanan**: memakai link `wa.me` resmi WhatsApp (gratis,
+tanpa API WhatsApp Business dan tanpa kredensial pihak ketiga) — pesan
+disusun di browser, lalu aplikasi/WhatsApp Web terbuka dengan pesan siap
+kirim dari nomor WhatsApp admin sendiri. Pesan ke pelanggan TIDAK
+memuat data internal (komisi, nama kasir).
+
 ## Deployment
 
 1. `npm run build` → hasil di `dist/`.
@@ -268,6 +290,14 @@ export CSV memakai tanggal WIB, termasuk kolom `Tanggal (WIB)`.
 - [ ] Cash: uang kurang → tombol terkunci; `Uang Pas` / chip cepat → kembalian benar.
 - [ ] QRIS/Transfer: wajib centang "sudah diverifikasi" sebelum bisa diproses.
 - [ ] Struk muncul & tercetak; klik Transaksi Baru → keranjang bersih.
+
+**Kirim Struk via WhatsApp** (setelah migrasi 008)
+- [ ] Isi No. WhatsApp di form kasir → tersimpan; dialog sukses terisi otomatis.
+- [ ] Kirim via WhatsApp → aplikasi/WA Web terbuka dengan pesan struk siap kirim (isi: invoice, item, total, metode — tanpa komisi/kasir).
+- [ ] Nomor kosong → tombol kirim terkunci sampai nomor diisi & valid.
+- [ ] Nomor tidak valid (mis. "abc") → form kasir menampilkan peringatan & tombol bayar terkunci.
+- [ ] Riwayat → Detail transaksi yang punya nomor → tombol "Kirim via WhatsApp" tampil & berfungsi.
+- [ ] Transaksi tanpa nomor → tombol tidak muncul di Riwayat (data tidak tersedia).
 
 **Riwayat**
 - [ ] Cari invoice & nomor polisi (parsial), filter kombinasi, pagination.
@@ -315,5 +345,7 @@ export CSV memakai tanggal WIB, termasuk kolom `Tanggal (WIB)`.
 | 7 | Audit keamanan, code-splitting, responsif, dokumentasi | ✅ Selesai |
 | 8 | Kelola karyawan + komisi otomatis per transaksi | ✅ Selesai |
 | 9 | Prediksi omzet (Holt-Winters + MAPE, tanpa API) | ✅ Selesai |
+| 10 | Asisten data (chatbot Gemini via Edge Function) | ✅ Selesai |
+| 11 | Kirim struk via WhatsApp pelanggan (wa.me) | ✅ Selesai |
 
-**Semua fase selesai.** Aplikasi siap diuji end-to-end dan dideploy. (Fase 10: chatbot data admin menyusul.)
+**Semua fase selesai.** Aplikasi siap diuji end-to-end dan dideploy.

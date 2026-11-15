@@ -58,6 +58,7 @@ import { usePosCart } from "@/hooks/usePosCart"
 import { usePosServices } from "@/hooks/usePosServices"
 import { formatRupiah } from "@/lib/format"
 import { PAYMENT_METHOD_LABELS, VEHICLE_TYPE_LABELS } from "@/lib/constants"
+import { normalizePhone } from "@/lib/whatsapp"
 import {
   createTransaction,
   fetchTransactionDetail,
@@ -112,6 +113,7 @@ export default function PosPage() {
   // Form transaksi
   const [customerName, setCustomerName] = useState("")
   const [plateNumber, setPlateNumber] = useState("")
+  const [customerPhone, setCustomerPhone] = useState("")
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash")
   const [cashInput, setCashInput] = useState("")
 
@@ -134,8 +136,13 @@ export default function PosPage() {
   const cashShort =
     paymentMethod === "cash" && cart.lines.length > 0 && (cashReceived ?? 0) < cart.total
 
+  // Nomor WhatsApp opsional — bila diisi, harus valid agar bisa dipakai
+  // link wa.me saat mengirim struk.
+  const phoneInvalid =
+    customerPhone.trim() !== "" && normalizePhone(customerPhone) === null
+
   const canCheckout =
-    cart.lines.length > 0 && !cart.discountError && !cashShort
+    cart.lines.length > 0 && !cart.discountError && !cashShort && !phoneInvalid
 
   // Dialog & proses
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -187,6 +194,7 @@ export default function PosPage() {
         discount: cart.discount,
         customerName: customerName.trim() || null,
         plateNumber: plateNumber.trim() || null,
+        customerPhone: normalizePhone(customerPhone) ?? null,
         cashReceived: paymentMethod === "cash" ? cashReceived : null,
         employeeId: selectedEmployee ? selectedEmployee.id : null,
       })
@@ -201,6 +209,7 @@ export default function PosPage() {
       cart.resetForNewTransaction()
       setCustomerName("")
       setPlateNumber("")
+      setCustomerPhone("")
       setCashInput("")
       setPaymentMethod("cash")
       setSelectedEmployeeId("")
@@ -428,6 +437,29 @@ export default function PosPage() {
                         }
                         maxLength={12}
                       />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="pos-phone">
+                        No. WhatsApp Pelanggan{" "}
+                        <span className="text-xs text-muted-foreground">
+                          (opsional — untuk kirim struk)
+                        </span>
+                      </Label>
+                      <Input
+                        id="pos-phone"
+                        placeholder="0812xxxxxxx"
+                        inputMode="tel"
+                        value={customerPhone}
+                        onChange={(e) => setCustomerPhone(e.target.value)}
+                        maxLength={20}
+                        aria-invalid={phoneInvalid}
+                      />
+                      {phoneInvalid && (
+                        <p className="text-xs text-destructive">
+                          Nomor WhatsApp tidak valid. Contoh: 0812xxxxxxx
+                          atau 62812xxxxxxx.
+                        </p>
+                      )}
                     </div>
                   </div>
 
