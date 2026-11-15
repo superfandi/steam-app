@@ -153,3 +153,38 @@
     @apply bg-background font-sans text-foreground antialiased;
   }
 }
+
+/* ==========================================================================
+   CETAK STRUK (thermal 80mm)
+   Saat window.print() dijalankan, hanya elemen ber-class .print-area
+   yang tercetak; sisa antarmuka disembunyikan.
+   ========================================================================== */
+@media print {
+  @page {
+    margin: 4mm;
+    size: 80mm auto;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .print-area,
+  .print-area * {
+    visibility: visible !important;
+  }
+
+  .print-area {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 80mm !important;
+    max-width: 80mm !important;
+    margin: 0 !important;
+    padding: 0 2mm !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #fff !important;
+  }
+}

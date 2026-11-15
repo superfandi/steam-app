@@ -116,3 +116,18 @@ export async function deleteService(id: string): Promise<void> {
     throw new Error(describeServiceError(error, "Gagal menghapus layanan."))
   }
 }
+
+/** Ambil layanan AKTIF untuk satu jenis kendaraan (panel POS). */
+export async function fetchActiveServices(
+  vehicleType: VehicleType,
+): Promise<ServiceRow[]> {
+  const { data, error } = await supabase
+    .from("services")
+    .select("*")
+    .eq("is_active", true)
+    .eq("vehicle_type", vehicleType)
+    .order("name", { ascending: true })
+
+  if (error) throw error
+  return (data ?? []) as ServiceRow[]
+}
