@@ -1,5 +1,5 @@
 -- ============================================================================
--- WASH POS - 005_employees.sql
+-- Pandawa Steam - 005_employees.sql
 -- Tabel karyawan pencucian + Row Level Security.
 --
 -- Model komisi:

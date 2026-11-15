@@ -61,7 +61,7 @@ function SidebarBrand() {
         <Droplets className="h-5 w-5 text-primary-foreground" />
       </div>
       <div className="min-w-0 whitespace-nowrap leading-tight lg:opacity-0 lg:transition-opacity lg:duration-200 lg:group-hover/sb:opacity-100">
-        <p className="text-sm font-bold tracking-wide text-white">WASH POS</p>
+        <p className="text-sm font-bold tracking-wide text-white">Pandawa Steam</p>
         <p className="text-[11px] text-sidebar-muted">Cuci Motor &amp; Mobil</p>
       </div>
     </div>
@@ -154,7 +154,7 @@ export default function AdminLayout() {
         : location.pathname.startsWith(item.to),
     ) ?? null
 
-  const pageTitle = activeItem?.label ?? "WASH POS"
+  const pageTitle = activeItem?.label ?? "Pandawa Steam"
 
   const displayName = profile?.full_name?.trim() || "Admin"
   const email = user?.email ?? "-"

@@ -90,7 +90,7 @@ export default function LoginPage() {
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
             <Droplets className="h-5 w-5 text-primary-foreground" />
           </div>
-          <p className="text-lg font-bold tracking-wide text-white">WASH POS</p>
+          <p className="text-lg font-bold tracking-wide text-white">Pandawa Steam</p>
         </div>
 
         <div className="space-y-6">
@@ -117,7 +117,7 @@ export default function LoginPage() {
         </div>
 
         <p className="text-xs text-sidebar-muted">
-          © {new Date().getFullYear()} WASH POS. Seluruh hak cipta dilindungi.
+          © {new Date().getFullYear()} Pandawa Steam. Seluruh hak cipta dilindungi.
         </p>
       </div>
 
@@ -130,7 +130,7 @@ export default function LoginPage() {
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
                 <Droplets className="h-4 w-4 text-primary-foreground" />
               </div>
-              <p className="text-sm font-bold">WASH POS</p>
+              <p className="text-sm font-bold">Pandawa Steam</p>
             </div>
 
             <h2 className="text-xl font-bold">Masuk ke akun admin</h2>

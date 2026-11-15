@@ -1,5 +1,5 @@
 -- ============================================================================
--- WASH POS - 007_forecast.sql
+-- Pandawa Steam - 007_forecast.sql
 -- Prediksi omzet (Holt-Winters, dihitung di frontend):
 --   RPC get_revenue_history(p_days) mengembalikan deret pendapatan harian
 --   (hanya transaksi 'paid', zona Asia/Jakarta). Hari tanpa transaksi

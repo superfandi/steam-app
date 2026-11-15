@@ -1,9 +1,9 @@
 {
-  "name": "wash-pos",
+  "name": "pandawa-steam",
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "WASH POS - Sistem Point of Sale berbasis web untuk usaha pencucian motor dan mobil",
+  "description": "Pandawa Steam - Sistem Point of Sale berbasis web untuk usaha pencucian motor dan mobil",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

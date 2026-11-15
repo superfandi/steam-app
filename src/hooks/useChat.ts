@@ -5,7 +5,7 @@ import { sendChatMessage, type ChatMessage } from "@/services/chat.service"
 const GREETING: ChatMessage = {
   role: "assistant",
   content:
-    'Halo! 👋 Saya asisten data WASH POS. Tanyakan apa saja tentang data Anda — misalnya "berapa pendapatan hari ini?" atau "komisi minggu ini".',
+    'Halo! 👋 Saya asisten data Pandawa Steam. Tanyakan apa saja tentang data Anda — misalnya "berapa pendapatan hari ini?" atau "komisi minggu ini".',
 }
 
 /**

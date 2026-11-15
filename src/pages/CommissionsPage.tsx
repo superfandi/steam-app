@@ -103,7 +103,7 @@ export default function CommissionsPage() {
         : [data.end_date, data.start_date]
       let row = addTitleBlock(
         sheet,
-        "WASH POS — Laporan Komisi Karyawan",
+        "Pandawa Steam — Laporan Komisi Karyawan",
         [
           `Periode: ${from} s/d ${to} (WIB)`,
           `Dibuat: ${formatDateTimeWibPlain(new Date().toISOString())} WIB`,

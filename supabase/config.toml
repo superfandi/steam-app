@@ -1,7 +1,7 @@
-# Konfigurasi Supabase CLI untuk WASH POS.
+# Konfigurasi Supabase CLI untuk Pandawa Steam.
 # `project_id` dipakai saat `supabase link --project-ref <ref>`.
 
-project_id = "wash-pos"
+project_id = "pandawa-steam"
 
 [functions.chat]
 verify_jwt = true

@@ -1,6 +1,6 @@
 import { Loader2, Droplets } from "lucide-react"
 
-/** Layar penuh pemuatan dengan branding WASH POS. */
+/** Layar penuh pemuatan dengan branding Pandawa Steam. */
 export function FullScreenLoader({ label = "Memuat..." }: { label?: string }) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background">

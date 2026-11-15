@@ -43,7 +43,7 @@ export function normalizePhone(raw: string): string | null {
 export function buildWhatsAppReceiptText(data: ReceiptData): string {
   const lines: string[] = []
 
-  lines.push("*WASH POS*")
+  lines.push("*Pandawa Steam*")
   lines.push("Layanan Cuci Motor & Mobil")
   lines.push("─────────────────────")
   lines.push(`No. Invoice : ${data.invoiceNumber}`)

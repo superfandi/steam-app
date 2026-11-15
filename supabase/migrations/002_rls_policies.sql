@@ -1,8 +1,8 @@
 -- ============================================================================
--- WASH POS - 002_rls_policies.sql
+-- Pandawa Steam - 002_rls_policies.sql
 -- Row Level Security + kebijakan akses + penguatan privilege.
 --
--- Model keamanan WASH POS:
+-- Model keamanan Pandawa Steam:
 --   * Semua tabel: RLS ENABLED. Anon (belum login) TIDAK punya akses apa pun.
 --   * profiles     : admin hanya boleh baca/ubah barisnya sendiri.
 --   * services     : admin boleh CRUD (kebijakan is_admin).

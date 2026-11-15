@@ -192,7 +192,7 @@ export default function ReportsPage() {
       const span = 8
       let row = addTitleBlock(
         sheet,
-        "WASH POS — Laporan Pendapatan",
+        "Pandawa Steam — Laporan Pendapatan",
         [
           `Periode: ${data.start_date} s/d ${data.end_date} (WIB)`,
           `Dibuat: ${formatDateTimeWibPlain(new Date().toISOString())} WIB`,
@@ -308,7 +308,7 @@ export default function ReportsPage() {
 
       let row = addTitleBlock(
         sheet,
-        "WASH POS — Laporan Transaksi",
+        "Pandawa Steam — Laporan Transaksi",
         [
           `Periode: ${from} s/d ${to} (WIB)`,
           `Dibuat: ${formatDateTimeWibPlain(new Date().toISOString())} WIB`,

@@ -1,5 +1,5 @@
 // ============================================================================
-// WASH POS — Edge Function "chat"
+// Pandawa Steam — Edge Function "chat"
 // Asisten data admin berbasis Gemini (function calling).
 //
 // Keamanan:
@@ -81,7 +81,7 @@ function mondayOf(iso: string): string {
 function systemPrompt(): string {
   const today = todayJakartaIso()
   return [
-    "Anda adalah asisten data WASH POS, aplikasi kasir untuk usaha cuci motor & mobil.",
+    "Anda adalah asisten data Pandawa Steam, aplikasi kasir untuk usaha cuci motor & mobil.",
     "Tugas: menjawab pertanyaan admin tentang pendapatan, jumlah transaksi, dan komisi karyawan.",
     "",
     "ATURAN WAJIB:",

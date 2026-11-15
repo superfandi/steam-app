@@ -1,4 +1,4 @@
-# WASH POS
+# Pandawa Steam
 
 Sistem Point of Sale (POS) berbasis web untuk usaha pencucian kendaraan **motor dan mobil**.
 Dibangun dengan React + TypeScript + Vite + Tailwind CSS + shadcn/ui, dengan Supabase
