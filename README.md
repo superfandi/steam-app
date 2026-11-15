@@ -18,19 +18,22 @@ Dibangun dengan React + TypeScript + Vite + Tailwind CSS + shadcn/ui, dengan Sup
 | **Komisi** | Komisi dihitung otomatis di database saat checkout (persen × total setelah diskon, snapshot), laporan per karyawan + rincian transaksi + export CSV, kartu komisi hari ini di dashboard |
 | **Laporan** | Preset periode + rentang kustom (zona WIB), grafik harian, breakdown metode bayar, rekap harian, **export CSV** (ringkasan & per-transaksi) |
 | **Prediksi Omzet** | Holt-Winters aditif (musiman mingguan, dihitung di frontend tanpa API) — proyeksi 7/14/30 hari + pita ±1σ + metrik akurasi MAPE/MAE dari backtest |
+| **Asisten Data (Chat)** | Chatbot Gemini di Edge Function — tanya pendapatan/transaksi/komisi dalam bahasa Indonesia; tool memanggil RPC **dengan token user** (RLS tetap berlaku); verifikasi admin di server; tombol melayang di semua halaman |
 
 ## Teknologi
 
 - **React 19** + **TypeScript 7** (strict) + **Vite 8**
 - **Tailwind CSS 4** + **shadcn/ui** (Radix UI) + **lucide-react**
 - **React Router 7**, **React Hook Form + Zod**, **Recharts 3**, **sonner**
-- **Supabase JS 2** (PostgreSQL + Row Level Security + RPC)
+- **Supabase JS 2** (PostgreSQL + Row Level Security + RPC) + **Edge Functions** (Deno)
+- **Gemini API** (`gemini-2.5-flash`, function calling) untuk asisten data
 - Code-splitting per halaman (React.lazy + Suspense)
 
 ## Prasyarat
 
 - Node.js ≥ 20 dan npm
 - Akun Supabase (paket gratis sudah cukup)
+- *(Opsional, untuk asisten data)* API key Google AI Studio — gratis: https://aistudio.google.com/apikey
 
 ---
 
@@ -89,6 +92,45 @@ npm run build    # build produksi + verifikasi TypeScript (tsc -b)
 npm run preview  # pratinjau hasil build produksi
 ```
 
+## 5. Deploy Asisten Data (Edge Function + Gemini) — Opsional
+
+Fitur chat butuh **1 secret** (`GEMINI_API_KEY`) dan fungsi yang di-deploy.
+API key gratis dari https://aistudio.google.com/apikey.
+
+**Cara A — via Dashboard (tanpa CLI, paling mudah):**
+1. Supabase Dashboard → **Edge Functions** → **Create a new function** →
+   pilih opsi **Deploy via editor** → beri nama `chat`.
+2. Buka fungsi tersebut → **Edit code** → ganti seluruh isinya dengan
+   `supabase/functions/chat/index.ts` dari repo ini → **Deploy**.
+3. Dashboard → **Edge Functions → Secrets** (atau Project Settings →
+   Edge Functions) → tambahkan secret `GEMINI_API_KEY` = API key Anda.
+4. Selesai — tombol 💬 di aplikasi langsung aktif.
+
+**Cara B — via Supabase CLI:**
+
+```bash
+npx supabase login                          # login (buka browser)
+npx supabase link --project-ref <REF>       # REF = id project (Dashboard → Settings)
+npx supabase secrets set GEMINI_API_KEY=xxxx
+npx supabase functions deploy chat
+```
+
+> Catatan: `npx supabase` bisa gagal pada sebagian setup Windows
+> ("No matching binary package"). Solusi: pasang CLI global lewat Scoop
+> (`scoop bucket add supabase https://github.com/supabase/scoop-bucket.git`
+> lalu `scoop install supabase`) atau unduh `supabase_windows_amd64.zip`
+> dari https://github.com/supabase/cli/releases — atau pakai Cara A.
+
+**Keamanan yang sudah tertanam di fungsi:**
+- JWT diverifikasi (gateway `verify_jwt` + `auth.getUser`) dan wajib admin
+  (`public.is_admin()`) — non-admin dapat 403.
+- Tool dieksekusi dengan **token user**, bukan service role → RLS tetap
+  berlaku dan fungsi tidak pernah membuka data lebih dari yang boleh.
+- API key hanya hidup sebagai secret server-side, tidak pernah ke frontend.
+
+**Biaya:** paket gratis Supabase menyertakan kuota Edge Function; Gemini
+free tier cukup untuk pemakaian admin harian.
+
 ---
 
 ## Struktur Proyek
@@ -100,6 +142,7 @@ src/
 │   ├── history/             # CancelTransactionDialog
 │   ├── employees/           # EmployeeFormDialog
 │   ├── reports/             # RevenueForecastCard (prediksi omzet)
+│   ├── chat/                # ChatWidget (asisten data Gemini)
 │   ├── shared/              # PageHeader, StatCard, EmptyState, ErrorState, badges, FullScreenLoader
 │   ├── ui/                  # komponen shadcn/ui
 │   ├── ProtectedRoute.tsx   # guard sesi admin
@@ -116,6 +159,7 @@ src/
 │                            # commission.service.ts, auth.service.ts
 └── types/database.types.ts  # tipe hasil skema & RPC
 supabase/migrations/         # 7 file SQL (schema → RLS → RPC → seed → karyawan → komisi → prediksi)
+supabase/functions/chat/     # Edge Function asisten data (Deno, Gemini function calling)
 ```
 
 ## Model Database
@@ -177,6 +221,8 @@ export CSV memakai tanggal WIB, termasuk kolom `Tanggal (WIB)`.
      (nilai `VITE_*` dibaca saat build, bukan runtime).
    - Aktifkan SPA fallback (rewrite semua rute ke `/index.html`) agar
      refresh di `/pos`, `/history`, dst. tidak 404.
+3. Edge Function `chat` di-deploy terpisah lewat Dashboard/CLI —
+   lihat bagian *Deploy Asisten Data*; tidak ikut build frontend.
 
 ---
 
@@ -218,6 +264,14 @@ export CSV memakai tanggal WIB, termasuk kolom `Tanggal (WIB)`.
 - [ ] Ganti horizon 7/14/30 hari → grafik & "Proyeksi N hari" berubah tanpa loading lama (hitung lokal).
 - [ ] Badge MAPE/MAE dan parameter α/β/γ tampil; angka wajar (MAPE < 100% pada data cukup teratur).
 - [ ] Akun baru / data < 21 hari → empty state "Data belum cukup untuk diprediksi".
+
+**Asisten Data** (setelah deploy Edge Function + secret GEMINI_API_KEY)
+- [ ] Tombol 💬 kanan-bawah → panel chat terbuka; pesan sambutan tampil.
+- [ ] "Berapa pendapatan hari ini?" → jawaban memakai angka riil dari `get_dashboard_summary` (WIB).
+- [ ] "Komisi minggu ini?" → jawaban dari `get_commission_report` (Senin–hari ini).
+- [ ] "Pendapatan bulan ini?" → jawaban dari `get_report` (tanggal 1 s.d. hari ini).
+- [ ] Tombol reset menghapus percakapan; ikon mengetik muncul saat menunggu.
+- [ ] Tanpa secret `GEMINI_API_KEY` → pesan error ramah ("belum diatur"), bukan crash.
 
 **Responsif**
 - [ ] Mobile: sidebar jadi drawer, tabel menyembunyikan kolom sekunder, dialog dapat digulir.

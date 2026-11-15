@@ -1,0 +1,7 @@
+# Konfigurasi Supabase CLI untuk WASH POS.
+# `project_id` dipakai saat `supabase link --project-ref <ref>`.
+
+project_id = "wash-pos"
+
+[functions.chat]
+verify_jwt = true

@@ -33,6 +33,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 import { useAuth } from "@/hooks/useAuth"
+import { ChatWidget } from "@/components/chat/ChatWidget"
 
 interface NavItem {
   to: string
@@ -261,6 +262,9 @@ export default function AdminLayout() {
           <Outlet />
         </main>
       </div>
+
+      {/* Asisten data (chat Gemini) — semua halaman */}
+      <ChatWidget />
     </div>
   )
 }
