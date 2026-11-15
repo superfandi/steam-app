@@ -8,7 +8,11 @@
 //   * Tool dieksekusi dengan TOKEN USER (bukan service role) sehingga
 //     RLS & grant RPC tetap berlaku — data yang bocor maksimal = data admin.
 // Secret (wajib):
-//   supabase secrets set GEMINI_API_KEY=...   (atau via Dashboard → Edge Functions → Secrets)
+//   Dashboard → Edge Functions → Secrets → GEMINI_API_KEY
+//   (atau: supabase secrets set GEMINI_API_KEY=...)
+//
+// PENTAG MENDEPLOY: hapus SELURUH isi editor (Ctrl+A) sebelum menempel
+// kode ini — jangan sampai template bawaan dashboard ikut tersisa.
 // ============================================================================
 
 import { createClient } from "npm:@supabase/supabase-js@2"
@@ -186,7 +190,13 @@ async function callGemini(
       systemInstruction: { parts: [{ text: systemPrompt() }] },
       contents,
       tools: [TOOL_DECLARATIONS],
-      generationConfig: { temperature: 0.2, maxOutputTokens: 1024 },
+      // thinkingBudget 0: model 2.5 punya "thinking" aktif bawaan yang
+      // memakan budget token output — tanpa ini jawaban bisa kosong.
+      generationConfig: {
+        temperature: 0.2,
+        maxOutputTokens: 2048,
+        thinkingConfig: { thinkingBudget: 0 },
+      },
     }),
   })
 
@@ -235,6 +245,8 @@ Deno.serve(async (req) => {
     }
 
     // 3. Siapkan riwayat percakapan (maks 10 pesan terakhir).
+    //    Gemini hanya menerima role "user" | "model" — "assistant"
+    //    dari frontend WAJIB dikonversi, kalau tidak permintaan ditolak 400.
     const body = (await req.json()) as { messages?: IncomingMessage[] }
     const contents = (Array.isArray(body?.messages) ? body.messages : [])
       .filter(
@@ -244,7 +256,10 @@ Deno.serve(async (req) => {
           m.content.trim().length > 0,
       )
       .slice(-10)
-      .map((m) => ({ role: m.role, parts: [{ text: m.content as string }] }))
+      .map((m) => ({
+        role: m.role === "assistant" ? "model" : "user",
+        parts: [{ text: m.content as string }],
+      }))
 
     if (contents.length === 0) {
       return json({ error: "Pertanyaan kosong." }, 400)
