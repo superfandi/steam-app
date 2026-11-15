@@ -154,6 +154,15 @@ free tier cukup untuk pemakaian admin harian.
   cek **Edge Functions → Logs** untuk melihat di mana waktunya habis.
   Ingin lebih cepat lagi? set secret `GEMINI_MODEL` =
   `gemini-3.5-flash-lite` (thinking default "minimal", paling cepat).
+- **"Sesi login tidak valid atau sudah kedaluwarsa"** → permintaan ditolak
+  platform Supabase sebelum fungsi berjalan (token sesi tidak ikut / tidak
+  valid — bukan masalah Gemini). **Keluar (logout) lalu login ulang**, lalu
+  coba lagi. Frontend kini melakukan pre-flight sesi dan menampilkan
+  penyebab asli — tidak lagi tertutup pesan generik
+  "Asisten gagal merespons. Coba lagi." (Penyebab teknis: dengan key
+  format baru `sb_publishable_…`, `functions.invoke` tidak mengirim
+  header `Authorization` bila token sesi tidak tersedia, dan body penolakan
+  platform `{code, message}` tidak punya field `error`.)
 
 **Editor VS Code menampilkan merah/error di `supabase/functions/chat/index.ts`?**
 Itu normal — VS Code tanpa ekstensi Deno tidak mengenal modul `npm:`/`jsr:`
