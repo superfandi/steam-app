@@ -55,11 +55,11 @@ const NAV_ITEMS: NavItem[] = [
 /** Logo + nama aplikasi pada sidebar. */
 function SidebarBrand() {
   return (
-    <div className="flex items-center gap-3 px-6 py-5">
+    <div className="flex items-center gap-3 px-6 py-5 lg:pl-[18px] lg:pr-3 lg:transition-[padding] lg:duration-200 lg:ease-out lg:group-hover/sb:px-6">
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary">
         <Droplets className="h-5 w-5 text-primary-foreground" />
       </div>
-      <div className="leading-tight">
+      <div className="min-w-0 whitespace-nowrap leading-tight lg:opacity-0 lg:transition-opacity lg:duration-200 lg:group-hover/sb:opacity-100">
         <p className="text-sm font-bold tracking-wide text-white">WASH POS</p>
         <p className="text-[11px] text-sidebar-muted">Cuci Motor &amp; Mobil</p>
       </div>
@@ -70,16 +70,17 @@ function SidebarBrand() {
 /** Daftar tautan navigasi sidebar. */
 function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   return (
-    <nav className="flex flex-col gap-1 px-3">
+    <nav className="flex flex-col gap-1 px-3 lg:px-0 lg:transition-[padding] lg:duration-200 lg:ease-out lg:group-hover/sb:px-3">
       {NAV_ITEMS.map((item) => (
         <NavLink
           key={item.to}
           to={item.to}
           end={item.end}
           onClick={onNavigate}
+          title={item.label}
           className={({ isActive }) =>
             cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+              "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors lg:px-[28px] lg:transition-[padding,color,background-color] lg:duration-200 lg:ease-out lg:group-hover/sb:px-3",
               isActive
                 ? "bg-sidebar-accent text-sidebar-accent-foreground"
                 : "text-sidebar-muted hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
@@ -87,7 +88,9 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
           }
         >
           <item.icon className="h-4 w-4 shrink-0" aria-hidden />
-          <span className="truncate">{item.label}</span>
+          <span className="min-w-0 flex-1 truncate whitespace-nowrap lg:w-0 lg:flex-none lg:opacity-0 lg:transition-[opacity,width] lg:duration-200 lg:group-hover/sb:w-auto lg:group-hover/sb:flex-1 lg:group-hover/sb:opacity-100">
+            {item.label}
+          </span>
         </NavLink>
       ))}
     </nav>
@@ -105,12 +108,12 @@ function SidebarFooterCard({
   onLogout: () => void
 }) {
   return (
-    <div className="border-t border-sidebar-border p-4">
-      <div className="flex items-center gap-3 rounded-xl bg-sidebar-accent/40 p-3">
+    <div className="border-t border-sidebar-border p-4 lg:p-[18px] lg:transition-[padding] lg:duration-200 lg:ease-out lg:group-hover/sb:p-4">
+      <div className="flex items-center gap-3 rounded-xl bg-sidebar-accent/40 p-3 lg:bg-transparent lg:p-0 lg:transition-[padding,background-color] lg:duration-200 lg:ease-out lg:group-hover/sb:bg-sidebar-accent/40 lg:group-hover/sb:p-3">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
           {displayName.charAt(0).toUpperCase() || "A"}
         </div>
-        <div className="min-w-0 flex-1 leading-tight">
+        <div className="min-w-0 flex-1 leading-tight lg:w-0 lg:flex-none lg:opacity-0 lg:transition-[opacity,width] lg:duration-200 lg:group-hover/sb:w-auto lg:group-hover/sb:flex-1 lg:group-hover/sb:opacity-100">
           <p className="truncate text-sm font-semibold text-sidebar-accent-foreground">
             {displayName}
           </p>
@@ -120,7 +123,7 @@ function SidebarFooterCard({
           variant="ghost"
           size="icon"
           onClick={onLogout}
-          className="shrink-0 text-sidebar-muted hover:bg-sidebar-accent hover:text-red-400"
+          className="shrink-0 text-sidebar-muted hover:bg-sidebar-accent hover:text-red-400 lg:pointer-events-none lg:opacity-0 lg:transition-opacity lg:duration-200 lg:group-hover/sb:pointer-events-auto lg:group-hover/sb:opacity-100"
           title="Keluar dari aplikasi"
         >
           <LogOut className="h-4 w-4" />
@@ -132,7 +135,9 @@ function SidebarFooterCard({
 
 /**
  * Layout utama seluruh halaman admin:
- * - Sidebar gelap permanen di layar besar (lg+).
+ * - Sidebar gelap di layar besar (lg+): mode rail 72px (ikon saja) yang
+ *   mengembang ke 256px saat di-hover atau menerima fokus keyboard
+ *   (focus-within) — overlay, konten halaman tidak bergeser.
  * - Sidebar berupa drawer (Sheet) di layar kecil.
  * - Topbar berjudul halaman aktif + menu akun admin.
  */
@@ -165,7 +170,7 @@ export default function AdminLayout() {
   return (
     <div className="min-h-screen bg-background">
       {/* ---------------- Sidebar desktop ---------------- */}
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col bg-sidebar lg:flex">
+      <aside className="group/sb fixed inset-y-0 left-0 z-40 hidden w-[72px] flex-col overflow-hidden bg-sidebar transition-[width] duration-200 ease-out hover:w-64 focus-within:w-64 motion-reduce:transition-none lg:flex">
         <SidebarBrand />
         <div className="flex-1 overflow-y-auto py-4">
           <SidebarNav />
@@ -178,7 +183,7 @@ export default function AdminLayout() {
       </aside>
 
       {/* ---------------- Konten + topbar ---------------- */}
-      <div className="flex min-h-screen flex-col lg:pl-64">
+      <div className="flex min-h-screen flex-col lg:pl-[72px]">
         <header className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
           <div className="flex h-14 items-center gap-3 px-4 md:px-6">
             {/* Tombol menu (mobile) */}
