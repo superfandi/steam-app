@@ -33,17 +33,21 @@ export interface ReceiptData {
   cashChange: number | null
   /** Nama karyawan yang mengerjakan (opsional). */
   operatorName: string | null
+  /** Nomor antrian bila transaksi berasal dari antrian (opsional). */
+  queueNumber?: number | null
 }
 
 /**
  * Petakan baris database + item menjadi data struk.
  * `operatorName` = nama karyawan yang mengerjakan (opsional).
+ * `queueNumber` = nomor antrian bila transaksi berasal dari antrian.
  */
 export function toReceiptData(
   transaction: TransactionRow,
   items: TransactionItemRow[],
   cashierName: string | null,
   operatorName: string | null = null,
+  queueNumber: number | null = null,
 ): ReceiptData {
   return {
     invoiceNumber: transaction.invoice_number,
@@ -66,6 +70,7 @@ export function toReceiptData(
     cashReceived: transaction.cash_received,
     cashChange: transaction.cash_change,
     operatorName,
+    queueNumber,
   }
 }
 
@@ -113,6 +118,12 @@ export function Receipt({ data }: { data: ReceiptData }) {
 
       {/* Info transaksi */}
       <div className="space-y-0.5">
+        {data.queueNumber != null && (
+          <Row
+            label="No. Antrian"
+            value={`#${String(data.queueNumber).padStart(2, "0")}`}
+          />
+        )}
         <Row label="No. Invoice" value={data.invoiceNumber} />
         <Row label="Tanggal" value={formatDateTime(data.createdAt)} />
         {data.cashierName && <Row label="Kasir" value={data.cashierName} />}

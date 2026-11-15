@@ -1,5 +1,6 @@
-import { useState, type ChangeEvent } from "react"
+import { useEffect, useRef, useState, type ChangeEvent } from "react"
 import { toast } from "sonner"
+import { useLocation } from "react-router-dom"
 import {
   Banknote,
   Bike,
@@ -65,7 +66,19 @@ import {
   mapTransactionError,
   type TransactionDetail,
 } from "@/services/transaction.service"
+import { updateQueueStatus } from "@/services/queue.service"
 import type { PaymentMethod, ServiceRow, VehicleType } from "@/types"
+
+/** Data antrian yang diteruskan dari halaman Antrian (navigate state). */
+interface QueuePrefill {
+  id: string
+  queueNumber: number
+  customerName: string | null
+  plateNumber: string | null
+  customerPhone: string | null
+  vehicleType: VehicleType
+  serviceId: string | null
+}
 
 const PAYMENT_METHOD_ICONS: Record<PaymentMethod, LucideIcon> = {
   cash: Banknote,
@@ -93,9 +106,22 @@ function parseMoney(value: string): number {
  */
 export default function PosPage() {
   const { profile } = useAuth()
+  const location = useLocation()
+
+  // Antrian dari halaman Antrian ("Buat Transaksi"): sekali snapshot di
+  // state, lalu router state dihapus agar refresh tidak mengulang prefill.
+  const [queuePrefill, setQueuePrefill] = useState<QueuePrefill | null>(
+    () => (location.state as { queue?: QueuePrefill } | null)?.queue ?? null,
+  )
+  useEffect(() => {
+    if (queuePrefill) window.history.replaceState({}, "")
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Panel kiri
-  const [vehicleType, setVehicleType] = useState<VehicleType>("motor")
+  const [vehicleType, setVehicleType] = useState<VehicleType>(
+    queuePrefill?.vehicleType ?? "motor",
+  )
   const { services, isLoading, error, reload } = usePosServices(vehicleType)
 
   // Keranjang
@@ -110,12 +136,25 @@ export default function PosPage() {
   } = useActiveEmployees()
   const [selectedEmployeeId, setSelectedEmployeeId] = useState("")
 
-  // Form transaksi
-  const [customerName, setCustomerName] = useState("")
-  const [plateNumber, setPlateNumber] = useState("")
-  const [customerPhone, setCustomerPhone] = useState("")
+  // Form transaksi — terisi otomatis bila datang dari antrian.
+  const [customerName, setCustomerName] = useState(queuePrefill?.customerName ?? "")
+  const [plateNumber, setPlateNumber] = useState(queuePrefill?.plateNumber ?? "")
+  const [customerPhone, setCustomerPhone] = useState(queuePrefill?.customerPhone ?? "")
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash")
   const [cashInput, setCashInput] = useState("")
+
+  // Prefill layanan dari antrian: tambahkan sekali setelah daftar layanan
+  // termuat (dilewati bila layanan sudah tidak aktif).
+  const prefillAppliedRef = useRef(false)
+  const { addItem } = cart
+  useEffect(() => {
+    if (prefillAppliedRef.current) return
+    if (!queuePrefill?.serviceId) return
+    if (isLoading) return
+    const service = services.find((s) => s.id === queuePrefill.serviceId)
+    if (service) addItem(service)
+    prefillAppliedRef.current = true
+  }, [isLoading, services, queuePrefill, addItem])
 
   const selectedEmployee =
     activeEmployees.find((employee) => employee.id === selectedEmployeeId) ??
@@ -150,6 +189,10 @@ export default function PosPage() {
   const [pendingVehicleType, setPendingVehicleType] =
     useState<VehicleType | null>(null)
   const [successDetail, setSuccessDetail] = useState<TransactionDetail | null>(
+    null,
+  )
+  /** Nomor antrian untuk struk — disnapshot sebelum prefill dihapus. */
+  const [successQueueNumber, setSuccessQueueNumber] = useState<number | null>(
     null,
   )
   const [successOpen, setSuccessOpen] = useState(false)
@@ -202,8 +245,30 @@ export default function PosPage() {
       // 2) Ambil data lengkap (header + item snapshot) untuk struk.
       const detail = await fetchTransactionDetail(result.transaction_id)
 
+      // 2b) Bila transaksi berasal dari antrian, tandai antrian selesai
+      //     dan kaitkan invoice-nya. Gagal tidak membatalkan transaksi.
+      if (queuePrefill) {
+        try {
+          await updateQueueStatus({
+            queueId: queuePrefill.id,
+            status: "selesai",
+            transactionId: result.transaction_id,
+          })
+          toast.success(
+            `Antrian #${String(queuePrefill.queueNumber).padStart(2, "0")} ditandai selesai.`,
+          )
+        } catch (queueErr) {
+          console.error("updateQueueStatus:", queueErr)
+          toast.warning(
+            "Transaksi tersimpan, tetapi gagal menandai antrian selesai. Selesaikan manual di halaman Antrian.",
+          )
+        }
+        setQueuePrefill(null)
+      }
+
       // 3) Tampilkan struk & reset keranjang untuk transaksi berikutnya.
       setSuccessDetail(detail)
+      setSuccessQueueNumber(queuePrefill?.queueNumber ?? null)
       setConfirmOpen(false)
       setSuccessOpen(true)
       cart.resetForNewTransaction()
@@ -229,6 +294,7 @@ export default function PosPage() {
   function closeSuccess() {
     setSuccessOpen(false)
     setSuccessDetail(null)
+    setSuccessQueueNumber(null)
   }
 
   /* ---------------- Render ---------------- */
@@ -738,6 +804,7 @@ export default function PosPage() {
         onClose={closeSuccess}
         detail={successDetail}
         cashierName={profile?.full_name ?? null}
+        queueNumber={successQueueNumber}
       />
     </div>
   )

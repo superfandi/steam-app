@@ -17,6 +17,7 @@ import AdminLayout from "@/layouts/AdminLayout"
 const LoginPage = lazy(() => import("@/pages/LoginPage"))
 const DashboardPage = lazy(() => import("@/pages/DashboardPage"))
 const PosPage = lazy(() => import("@/pages/PosPage"))
+const QueuePage = lazy(() => import("@/pages/QueuePage"))
 const ServicesPage = lazy(() => import("@/pages/ServicesPage"))
 const EmployeesPage = lazy(() => import("@/pages/EmployeesPage"))
 const HistoryPage = lazy(() => import("@/pages/HistoryPage"))
@@ -41,6 +42,7 @@ export default function App() {
                 <Route element={<AdminLayout />}>
                   <Route index element={<DashboardPage />} />
                   <Route path="pos" element={<PosPage />} />
+                  <Route path="queue" element={<QueuePage />} />
                   <Route path="services" element={<ServicesPage />} />
                   <Route path="employees" element={<EmployeesPage />} />
                   <Route path="history" element={<HistoryPage />} />

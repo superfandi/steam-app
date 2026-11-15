@@ -12,6 +12,7 @@ Dibangun dengan React + TypeScript + Vite + Tailwind CSS + shadcn/ui, dengan Sup
 | **Dashboard** | 4 kartu statistik hari ini, grafik pendapatan 14 hari, ringkasan metode bayar, 8 transaksi terbaru |
 | **Manajemen Layanan** | CRUD layanan motor/mobil, harga Rupiah, pencarian, filter, aktif/nonaktif, proteksi hapus |
 | **Kasir (POS)** | Dua panel (layanan + keranjang), diskon nominal, 3 metode bayar, kembalian otomatis, verifikasi QRIS/Transfer |
+| **Antrian** | Nomor urut harian (reset WIB), papan menunggu→dipanggil→dikerjakan→selesai, kabar tiap tahap **via WhatsApp**, jalan pintas ke kasir, nomor antrian ikut di struk |
 | **Struk** | Pratinjau & cetak thermal 80mm (`window.print()`), banner khusus transaksi dibatalkan, **kirim via WhatsApp pelanggan** (`wa.me`, pesan struk terisi otomatis) |
 | **Riwayat** | Pencarian invoice/polisi, filter tanggal–kendaraan–metode–status, pagination server-side, detail + cetak ulang, pembatalan ber-alasan |
 | **Karyawan** | CRUD karyawan pengerjakan (telepon, jabatan), persen komisi per karyawan, aktif/nonaktif |
@@ -53,6 +54,7 @@ Dibangun dengan React + TypeScript + Vite + Tailwind CSS + shadcn/ui, dengan Sup
    | 6 | `supabase/migrations/006_transaction_commission.sql` | Kolom komisi di `transactions`, update RPC `create_transaction` (hitung & snapshot komisi di database), RPC `get_commission_report`, `get_dashboard_summary` + `today_commission` |
    | 7 | `supabase/migrations/007_forecast.sql` | RPC `get_revenue_history(p_days)` — deret pendapatan harian WIB (hanya lunas, hari kosong = 0) untuk prediksi omzet |
    | 8 | `supabase/migrations/008_transaction_whatsapp.sql` | Kolom `customer_phone` di `transactions` + RPC `create_transaction` menerima `p_customer_phone` (normalisasi 08xx → 628xx) untuk kirim struk via WhatsApp |
+   | 9 | `supabase/migrations/009_queue.sql` | Tabel `queue_entries` (antrian harian, status bertahap, kaitan transaksi) + RPC `create_queue_entry`, `update_queue_status`, `get_queue_today` |
 
 3. **Pengaturan keamanan penting** — buka **Authentication → Providers → Email**
    dan **matikan "Allow new users to sign up"**. Setiap user auth baru otomatis
@@ -294,6 +296,33 @@ disusun di browser, lalu aplikasi/WhatsApp Web terbuka dengan pesan siap
 kirim dari nomor WhatsApp admin sendiri. Pesan ke pelanggan TIDAK
 memuat data internal (komisi, nama kasir).
 
+## Antrian + Kabar WhatsApp
+
+Antrian dikelola di aplikasi; WhatsApp menjadi saluran kabar ke pelanggan
+(pola `wa.me` yang sama — tanpa bot/API, jadi tidak bisa membaca pesan
+masuk):
+
+1. **Daftarkan antrian** di halaman *Antrian*: nama, No. WhatsApp (opsional),
+   plat, jenis kendaraan, layanan & catatan. Nomor urut dihitung database
+   secara atomik dan **reset setiap hari (WIB)** — 01, 02, 03, …
+2. **Papan antrian** tiga kolom — *Menunggu / Dipanggil / Dikerjakan* —
+   plus riwayat selesai/batal. Papan menyegarkan otomatis tiap 30 detik.
+3. **Kabar WhatsApp per tahap** — tombol *WA* di setiap kartu menyusun
+   pesan sesuai status: sambutan + perkiraan tunggu (menunggu), "bersiap"
+   (dipanggil), "sedang dikerjakan", dan "sudah selesai, silakan ke kasir".
+4. **Buat Transaksi** dari kartu antrian (dipanggil/dikerjakan) membuka
+   kasir dengan pelanggan, plat, No. WA, jenis kendaraan, dan layanan
+   terisi otomatis. Setelah checkout sukses, antrian **otomatis ditandai
+   selesai** dan dihubungkan ke invoice-nya (`queue_entries.transaction_id`).
+5. **Struk** (cetak & WhatsApp) menampilkan baris *No. Antrian* bila
+   transaksi berasal dari antrian.
+
+Aturan transisi divalidasi di database (RPC `update_queue_status`): loncat
+tahap diperbolehkan (mis. dipanggil → selesai langsung bayar), antrian
+`selesai`/`batal` tidak bisa diubah lagi, dan pembatalan wajib alasan
+(minimal 3 karakter). Statistik rata-rata waktu tunggu & pengerjaan
+diambil dari 7 hari terakhir untuk perkiraan menunggu.
+
 ## Deployment
 
 1. `npm run build` → hasil di `dist/`.
@@ -381,5 +410,6 @@ memuat data internal (komisi, nama kasir).
 | 9 | Prediksi omzet (Holt-Winters + MAPE, tanpa API) | ✅ Selesai |
 | 10 | Asisten data (chatbot Gemini via Edge Function) | ✅ Selesai |
 | 11 | Kirim struk via WhatsApp pelanggan (wa.me) | ✅ Selesai |
+| 12 | Antrian harian + kabar WhatsApp per tahap + terhubung POS | ✅ Selesai |
 
-**Semua fase selesai.** Aplikasi siap diuji end-to-end dan dideploy.
+**Fase 1–12 selesai.** Aplikasi siap diuji end-to-end dan dideploy.

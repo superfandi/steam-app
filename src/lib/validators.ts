@@ -57,3 +57,45 @@ export const employeeFormSchema = z.object({
 })
 
 export type EmployeeFormValues = z.infer<typeof employeeFormSchema>
+
+/**
+ * Skema validasi form daftarkan antrian (Fase 12).
+ * Semua kolom opsional kecuali jenis kendaraan; nomor WhatsApp
+ * divalidasi format ringan (digit, 9–15) — normalisasi final
+ * 08xx→62… ditangani database.
+ */
+export const queueFormSchema = z.object({
+  customer_name: z
+    .string()
+    .trim()
+    .max(60, "Nama maksimal 60 karakter")
+    .optional(),
+  customer_phone: z
+    .string()
+    .trim()
+    .max(20, "Nomor maksimal 20 karakter")
+    .refine(
+      (value) =>
+        value === "" ||
+        (value.replace(/\D/g, "").length >= 9 &&
+          value.replace(/\D/g, "").length <= 15),
+      "Nomor WhatsApp tidak valid. Contoh: 0812xxxxxxx",
+    )
+    .optional(),
+  plate_number: z
+    .string()
+    .trim()
+    .max(12, "Nomor polisi maksimal 12 karakter")
+    .optional(),
+  vehicle_type: z.enum(["motor", "mobil"], {
+    message: "Pilih jenis kendaraan",
+  }),
+  service_id: z.string().trim().optional(),
+  note: z
+    .string()
+    .trim()
+    .max(200, "Catatan maksimal 200 karakter")
+    .optional(),
+})
+
+export type QueueFormValues = z.infer<typeof queueFormSchema>

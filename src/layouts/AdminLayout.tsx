@@ -6,6 +6,7 @@ import {
   Droplets,
   HandCoins,
   LayoutDashboard,
+  ListOrdered,
   LogOut,
   Menu,
   ReceiptText,
@@ -46,6 +47,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/pos", label: "Kasir (POS)", icon: ShoppingCart },
+  { to: "/queue", label: "Antrian", icon: ListOrdered },
   { to: "/services", label: "Manajemen Layanan", icon: Sparkles },
   { to: "/employees", label: "Karyawan", icon: Users },
   { to: "/history", label: "Riwayat Transaksi", icon: ReceiptText },

@@ -210,3 +210,61 @@ export interface CommissionReport {
   per_employee: CommissionEmployeeRow[]
   transactions: CommissionTransactionRow[]
 }
+
+/* ------------------------------------------------------------------ */
+/* Antrian harian + notifikasi WhatsApp (migrasi 009)                  */
+/* ------------------------------------------------------------------ */
+
+export type QueueStatus =
+  | "menunggu"
+  | "dipanggil"
+  | "dikerjakan"
+  | "selesai"
+  | "batal"
+
+export interface QueueEntryRow {
+  id: string
+  /** Nomor urut harian (reset tiap hari WIB): 1, 2, 3, ... */
+  queue_number: number
+  /** Tanggal antrian "yyyy-mm-dd" (kalender WIB). */
+  queue_date: string
+  customer_name: string | null
+  /** Nomor WhatsApp pelanggan (format internasional 62…, opsional). */
+  customer_phone: string | null
+  plate_number: string | null
+  vehicle_type: VehicleType
+  service_id: string | null
+  /** Snapshot nama layanan yang diminta (opsional). */
+  service_name: string | null
+  note: string | null
+  status: QueueStatus
+  /** Terisi bila antrian selesai lalu dibayar lewat POS. */
+  transaction_id: string | null
+  cancel_reason: string | null
+  called_at: string | null
+  started_at: string | null
+  done_at: string | null
+  cancelled_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+/** Statistik papan antrian (hasil RPC get_queue_today). */
+export interface QueueStats {
+  waiting_count: number
+  called_count: number
+  working_count: number
+  done_count: number
+  cancelled_count: number
+  /** Rata-rata menit daftar → mulai dikerjakan (7 hari terakhir). */
+  avg_wait_minutes: number
+  /** Rata-rata menit mulai dikerjakan → selesai (7 hari terakhir). */
+  avg_service_minutes: number
+}
+
+/** Bentuk hasil RPC get_queue_today(). */
+export interface QueueTodayData {
+  date: string
+  entries: QueueEntryRow[]
+  stats: QueueStats
+}

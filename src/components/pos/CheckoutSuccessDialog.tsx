@@ -27,6 +27,8 @@ interface CheckoutSuccessDialogProps {
   onClose: () => void
   detail: TransactionDetail | null
   cashierName: string | null
+  /** Nomor antrian bila transaksi berasal dari antrian (opsional). */
+  queueNumber?: number | null
 }
 
 /**
@@ -39,6 +41,7 @@ export function CheckoutSuccessDialog({
   onClose,
   detail,
   cashierName,
+  queueNumber = null,
 }: CheckoutSuccessDialogProps) {
   // Nomor WhatsApp pelanggan: terisi otomatis dari transaksi (bila admin
   // mengisinya saat checkout) dan tetap bisa diedit di sini sebelum kirim.
@@ -61,7 +64,13 @@ export function CheckoutSuccessDialog({
     sendWhatsAppMessage(
       intlPhone,
       buildWhatsAppReceiptText(
-        toReceiptData(detail.transaction, detail.items, cashierName, detail.employeeName),
+        toReceiptData(
+          detail.transaction,
+          detail.items,
+          cashierName,
+          detail.employeeName,
+          queueNumber,
+        ),
       ),
     )
     toast.success("Struk dibuka di WhatsApp — tinggal tekan kirim.")
@@ -103,6 +112,7 @@ export function CheckoutSuccessDialog({
               detail.items,
               cashierName,
               detail.employeeName,
+              queueNumber,
             )}
           />
         )}
