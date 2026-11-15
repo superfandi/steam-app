@@ -10,6 +10,8 @@
 // Secret (wajib):
 //   Dashboard → Edge Functions → Secrets → GEMINI_API_KEY
 //   (atau: supabase secrets set GEMINI_API_KEY=...)
+// Secret (opsional):
+//   GEMINI_MODEL — override nama model (default: gemini-3.8-flash)
 //
 // PENTAG MENDEPLOY: hapus SELURUH isi editor (Ctrl+A) sebelum menempel
 // kode ini — jangan sampai template bawaan dashboard ikut tersisa.
@@ -23,8 +25,11 @@ const CORS_HEADERS = {
     "authorization, x-client-info, apikey, content-type",
 }
 
-const GEMINI_URL =
-  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+// Nama model bisa dioverride lewat secret GEMINI_MODEL tanpa edit kode —
+// berguna bila Google menghentikan model ini lagi di masa depan
+// (Dashboard → Edge Functions → Secrets → GEMINI_MODEL).
+const GEMINI_MODEL = Deno.env.get("GEMINI_MODEL") ?? "gemini-3.8-flash"
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 
@@ -183,24 +188,36 @@ async function callGemini(
     )
   }
 
-  const res = await fetch(GEMINI_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-    body: JSON.stringify({
-      systemInstruction: { parts: [{ text: systemPrompt() }] },
-      contents,
-      tools: [TOOL_DECLARATIONS],
-      // thinkingBudget 0: model 2.5 punya "thinking" aktif bawaan yang
-      // memakan budget token output — tanpa ini jawaban bisa kosong.
-      generationConfig: {
-        temperature: 0.2,
-        maxOutputTokens: 2048,
-        thinkingConfig: { thinkingBudget: 0 },
-      },
-    }),
-  })
+  // thinkingBudget 0: mematikan "thinking" agar tidak memakan budget token
+  // output (jawaban bisa kosong/terpotong). Bila model yang dipakai
+  // menolak field thinkingConfig, otomatis di-retry sekali TANPA field itu.
+  const post = (dropThinking: boolean) =>
+    fetch(GEMINI_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: systemPrompt() }] },
+        contents,
+        tools: [TOOL_DECLARATIONS],
+        generationConfig: dropThinking
+          ? { temperature: 0.2, maxOutputTokens: 2048 }
+          : {
+              temperature: 0.2,
+              maxOutputTokens: 2048,
+              thinkingConfig: { thinkingBudget: 0 },
+            },
+      }),
+    })
 
-  const data = (await res.json()) as GeminiPayload
+  let res = await post(false)
+  let data = (await res.json()) as GeminiPayload
+
+  if (!res.ok && /thinking/i.test(data?.error?.message ?? "")) {
+    console.warn(`${GEMINI_MODEL} menolak thinkingConfig — retry tanpa itu.`)
+    res = await post(true)
+    data = (await res.json()) as GeminiPayload
+  }
+
   if (!res.ok) {
     throw new Error(data?.error?.message ?? `Gemini error (HTTP ${res.status})`)
   }

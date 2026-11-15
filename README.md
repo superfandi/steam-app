@@ -26,7 +26,7 @@ Dibangun dengan React + TypeScript + Vite + Tailwind CSS + shadcn/ui, dengan Sup
 - **Tailwind CSS 4** + **shadcn/ui** (Radix UI) + **lucide-react**
 - **React Router 7**, **React Hook Form + Zod**, **Recharts 3**, **sonner**
 - **Supabase JS 2** (PostgreSQL + Row Level Security + RPC) + **Edge Functions** (Deno)
-- **Gemini API** (`gemini-2.5-flash`, function calling) untuk asisten data
+- **Gemini API** (`gemini-3.8-flash` via secret `GEMINI_MODEL`, function calling) untuk asisten data
 - Code-splitting per halaman (React.lazy + Suspense)
 
 ## Prasyarat
@@ -140,6 +140,11 @@ free tier cukup untuk pemakaian admin harian.
   atau kode template bawaan belum diganti seluruhnya).
 - *"GEMINI_API_KEY belum diatur"* → tambahkan secret di
   **Edge Functions → Secrets** lalu tunggu ±1 menit.
+- *"This model ... is no longer available to new users"* → model Gemini yang
+  dipakai sudah dihentikan Google. Ganti nama model TANPA edit kode:
+  tambahkan secret `GEMINI_MODEL` = nama model terbaru (mis.
+  `gemini-3.8-flash`) di **Edge Functions → Secrets**, lalu deploy ulang
+  fungsi. Kode ini default ke `gemini-3.8-flash`.
 
 **Editor VS Code menampilkan merah/error di `supabase/functions/chat/index.ts`?**
 Itu normal — VS Code tanpa ekstensi Deno tidak mengenal modul `npm:`/`jsr:`
