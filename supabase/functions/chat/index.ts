@@ -188,10 +188,15 @@ async function callGemini(
     )
   }
 
-  // thinkingBudget 0: mematikan "thinking" agar tidak memakan budget token
-  // output (jawaban bisa kosong/terpotong). Bila model yang dipakai
-  // menolak field thinkingConfig, otomatis di-retry sekali TANPA field itu.
-  const post = (dropThinking: boolean) =>
+  // Kontrol thinking:
+  //   * Model Gemini 3 (mis. gemini-3.8-flash) adalah model REASONING —
+  //     thinking selalu ada. Level yang didukung: low | medium | high
+  //     ("minimal" TIDAK didukung dan justru melempar error).
+  //   * "low" = latensi terendah yang valid, tetap andal untuk function
+  //     calling (tool) — pas untuk chat data cepat.
+  //   * Token thinking DIHITUNG dalam maxOutputTokens → budget harus besar,
+  //     kalau kecil jawaban bisa kosong/terpotong saat model berpikir.
+  const post = (withThinking: boolean) =>
     fetch(GEMINI_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
@@ -199,22 +204,24 @@ async function callGemini(
         systemInstruction: { parts: [{ text: systemPrompt() }] },
         contents,
         tools: [TOOL_DECLARATIONS],
-        generationConfig: dropThinking
-          ? { temperature: 0.2, maxOutputTokens: 2048 }
-          : {
+        generationConfig: withThinking
+          ? {
               temperature: 0.2,
-              maxOutputTokens: 2048,
-              thinkingConfig: { thinkingBudget: 0 },
-            },
+              maxOutputTokens: 8192,
+              thinkingConfig: { thinkingLevel: "low" },
+            }
+          : { temperature: 0.2, maxOutputTokens: 8192 },
       }),
     })
 
-  let res = await post(false)
+  let res = await post(true)
   let data = (await res.json()) as GeminiPayload
 
+  // Fallback: bila model menolak thinkingConfig (mis. model lama/beda
+  // generasi), panggil ulang sekali TANPA field thinkingConfig.
   if (!res.ok && /thinking/i.test(data?.error?.message ?? "")) {
     console.warn(`${GEMINI_MODEL} menolak thinkingConfig — retry tanpa itu.`)
-    res = await post(true)
+    res = await post(false)
     data = (await res.json()) as GeminiPayload
   }
 
@@ -283,9 +290,14 @@ Deno.serve(async (req) => {
     }
 
     // 4. Loop tool (maksimal 2 putaran function calling).
+    const requestStart = Date.now()
     let reply: string | null = null
     for (let round = 0; round < 3; round += 1) {
+      const roundStart = Date.now()
       const payload = await callGemini(contents)
+      console.log(
+        `chat: Gemini putaran ${round} selesai dalam ${Date.now() - roundStart} ms`,
+      )
       const parts = payload.candidates?.[0]?.content?.parts ?? []
       const calls = parts.filter((p) => p.functionCall)
       const text = parts
@@ -313,6 +325,9 @@ Deno.serve(async (req) => {
       contents.push({ role: "user", parts: responses })
     }
 
+    console.log(
+      `chat: total ${Date.now() - requestStart} ms, panjang jawaban ${reply?.length ?? 0} karakter`,
+    )
     return json({
       reply: reply ?? "Maaf, saya belum bisa menjawab pertanyaan itu.",
     })

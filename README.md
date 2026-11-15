@@ -147,6 +147,13 @@ free tier cukup untuk pemakaian admin harian.
   tambahkan secret `GEMINI_MODEL` = nama model terbaru (mis.
   `gemini-3.8-flash`) di **Edge Functions → Secrets**, lalu deploy ulang
   fungsi. Kode ini default ke `gemini-3.8-flash`.
+- **Chat terasa lambat (beberapa detik)** → normal pada model reasoning:
+  setiap putaran memuat waktu berpikir model + pemanggilan tool + putaran
+  jawaban terakhir. Kode sudah memakai level thinking `low` (tercepat yang
+  valid di `gemini-3.8-flash`) dan mencatat durasi tiap putaran ke log —
+  cek **Edge Functions → Logs** untuk melihat di mana waktunya habis.
+  Ingin lebih cepat lagi? set secret `GEMINI_MODEL` =
+  `gemini-3.5-flash-lite` (thinking default "minimal", paling cepat).
 
 **Editor VS Code menampilkan merah/error di `supabase/functions/chat/index.ts`?**
 Itu normal — VS Code tanpa ekstensi Deno tidak mengenal modul `npm:`/`jsr:`
