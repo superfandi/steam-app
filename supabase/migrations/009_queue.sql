@@ -310,11 +310,11 @@ begin
 
     'stats', (
       select jsonb_build_object(
-        'waiting_count',  count(*) filter (where q.status = 'menunggu'),
-        'called_count',   count(*) filter (where q.status = 'dipanggil'),
-        'working_count',  count(*) filter (where q.status = 'dikerjakan'),
-        'done_count',     count(*) filter (where q.status = 'selesai'),
-        'cancelled_count',count(*) filter (where q.status = 'batal'),
+        'waiting_count',  count(*) filter (where x.status = 'menunggu'),
+        'called_count',   count(*) filter (where x.status = 'dipanggil'),
+        'working_count',  count(*) filter (where x.status = 'dikerjakan'),
+        'done_count',     count(*) filter (where x.status = 'selesai'),
+        'cancelled_count',count(*) filter (where x.status = 'batal'),
 
         -- Rata-rata menit dari daftar → mulai dikerjakan (7 hari terakhir).
         'avg_wait_minutes', coalesce(round(avg(

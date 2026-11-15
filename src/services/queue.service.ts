@@ -29,9 +29,13 @@ export interface UpdateQueueStatusPayload {
 /* ------------------------------------------------------------------ */
 
 export function mapQueueError(error: unknown, fallback: string): string {
-  const message =
-    error instanceof Error && error.message ? error.message : null
-  if (message) return message
+  // Error RPC dari supabase-js adalah objek polos PostgrestError
+  // (bukan instance Error), jadi pesan asli database dibaca defensif
+  // agar tidak tertutup pesan generik.
+  if (error && typeof error === "object") {
+    const raw = (error as { message?: unknown }).message
+    if (typeof raw === "string" && raw.trim() !== "") return raw
+  }
 
   const code = getDbErrorCode(error)
   if (code === "42501") {
