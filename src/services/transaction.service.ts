@@ -241,7 +241,7 @@ export async function fetchTransactions(
 }
 
 /* ------------------------------------------------------------------ */
-/* Export CSV laporan: semua transaksi dalam rentang (Asia/Jakarta)    */
+/* Export laporan: semua transaksi dalam rentang (Asia/Jakarta)         */
 /* ------------------------------------------------------------------ */
 
 const EXPORT_PAGE_SIZE = 1000
@@ -249,7 +249,7 @@ const EXPORT_MAX_PAGES = 100 // pengaman: maks 100.000 baris
 
 /**
  * Ambil SELURUH transaksi (termasuk yang dibatalkan) dalam rentang
- * tanggal untuk export CSV. Iterasi pagination server-side sampai habis.
+ * tanggal untuk export laporan. Iterasi pagination server-side sampai habis.
  *
  * @param startIsoUtc      batas bawah inklusif (UTC ISO) — tengah malam WIB
  * @param endExclusiveIso  batas atas eksklusif (UTC ISO) — tengah malam WIB +1 hari

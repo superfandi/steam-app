@@ -5,6 +5,7 @@ import {
   Download,
   HandCoins,
   Info,
+  Loader2,
   ReceiptText,
   Users,
 } from "lucide-react"
@@ -34,7 +35,17 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { useCommissionReport } from "@/hooks/useCommissionReport"
-import { downloadCsv } from "@/lib/csv"
+import {
+  addRow,
+  addSectionLabel,
+  addTableHeader,
+  addTitleBlock,
+  addTotalsRow,
+  createWorkbook,
+  saveWorkbook,
+  setColumnWidths,
+  setupPrint,
+} from "@/lib/excel-export"
 import { formatDateTimeWibPlain, formatIsoDayJakarta, formatRupiah } from "@/lib/format"
 import { getReportPeriods, todayJakartaIso } from "@/lib/periods"
 
@@ -44,7 +55,7 @@ const defaultCustomStart = `${todayIso.slice(0, 7)}-01`
 /**
  * Laporan Komisi Karyawan:
  * preset periode + rentang kustom (WIB), rekap per karyawan,
- * rincian transaksi berkomisi, dan export CSV.
+ * rincian transaksi berkomisi, dan export Excel (.xlsx) berformat.
  * Hanya transaksi lunas yang dihitung — pembatalan otomatis dikecualikan.
  */
 export default function CommissionsPage() {
@@ -59,6 +70,7 @@ export default function CommissionsPage() {
   const end = activePeriod ? activePeriod.end : customEnd
 
   const { data, isLoading, error, reload } = useCommissionReport(start, end)
+  const [isExporting, setIsExporting] = useState(false)
 
   function applyCustomRange() {
     if (!customStart || !customEnd) {
@@ -73,41 +85,90 @@ export default function CommissionsPage() {
     setPeriodKey("custom")
   }
 
-  function exportCommission() {
+  async function exportCommission() {
     if (!data) return
-    const t = data.totals
+    setIsExporting(true)
+    try {
+      const t = data.totals
+      const wb = await createWorkbook()
+      const sheet = wb.addWorksheet("Komisi")
 
-    downloadCsv(
-      `laporan-komisi_${start <= end ? start : end}_s.d._${start <= end ? end : start}.csv`,
-      [
-        "Laporan Komisi Karyawan — WASH POS",
-        `Periode: ${data.start_date} s/d ${data.end_date}`,
-        `Dibuat: ${formatDateTimeWibPlain(new Date().toISOString())} WIB`,
-      ],
-      [
-        [""],
-        ["Rekap per Karyawan"],
-        ["Nama", "Jabatan", "Jumlah Transaksi", "Komisi (Rp)"],
-        ...data.per_employee.map((row) => [
-          row.name,
-          row.position ?? "",
-          row.transaction_count,
-          row.commission,
-        ]),
+      // 5 kolom: dipakai gabungan tabel rekap (4) & rincian (5).
+      setColumnWidths(sheet, [22, 18, 17, 14, 14])
+      setupPrint(sheet)
+
+      const span = 5
+      const [from, to] = data.start_date <= data.end_date
+        ? [data.start_date, data.end_date]
+        : [data.end_date, data.start_date]
+      let row = addTitleBlock(
+        sheet,
+        "WASH POS — Laporan Komisi Karyawan",
+        [
+          `Periode: ${from} s/d ${to} (WIB)`,
+          `Dibuat: ${formatDateTimeWibPlain(new Date().toISOString())} WIB`,
+        ],
+        span,
+      )
+
+      // Seksi 1: rekap per karyawan.
+      row = addSectionLabel(sheet, row, "Rekap per Karyawan")
+      row = addTableHeader(sheet, row, [
+        "Nama",
+        "Jabatan",
+        "Jumlah Transaksi",
+        "Komisi (Rp)",
+      ])
+      let zebraIndex = 0
+      for (const emp of data.per_employee) {
+        row = addRow(
+          sheet,
+          row,
+          [emp.name, emp.position ?? "", emp.transaction_count, emp.commission],
+          { moneyCols: [3], zebraIndex },
+        )
+        zebraIndex += 1
+      }
+      row = addTotalsRow(
+        sheet,
+        row,
         ["Total", "", t.transaction_count, t.total_commission],
-        [""],
-        ["Rincian Transaksi"],
-        ["Tanggal (WIB)", "Invoice", "Karyawan", "Total (Rp)", "Komisi (Rp)"],
-        ...data.transactions.map((txn) => [
-          txn.day,
-          txn.invoice_number,
-          txn.employee_name,
-          txn.total,
-          txn.commission,
-        ]),
-      ],
-    )
-    toast.success("Laporan komisi berhasil diunduh.")
+        [3],
+      )
+      row += 1 // baris kosong pemisah
+
+      // Seksi 2: rincian transaksi berkomisi.
+      row = addSectionLabel(sheet, row, "Rincian Transaksi")
+      row = addTableHeader(sheet, row, [
+        "Tanggal (WIB)",
+        "Invoice",
+        "Karyawan",
+        "Total (Rp)",
+        "Komisi (Rp)",
+      ])
+      zebraIndex = 0
+      for (const txn of data.transactions) {
+        row = addRow(
+          sheet,
+          row,
+          [txn.day, txn.invoice_number, txn.employee_name, txn.total, txn.commission],
+          { moneyCols: [3, 4], zebraIndex },
+        )
+        zebraIndex += 1
+      }
+
+      await saveWorkbook(wb, `laporan-komisi_${from}_s.d._${to}.xlsx`)
+      toast.success("Laporan komisi berhasil diunduh.")
+    } catch (err) {
+      console.error("exportCommission:", err)
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Gagal export komisi. Silakan coba lagi.",
+      )
+    } finally {
+      setIsExporting(false)
+    }
   }
 
   const totals = data?.totals
@@ -121,11 +182,20 @@ export default function CommissionsPage() {
         actions={
           <Button
             variant="outline"
-            onClick={exportCommission}
-            disabled={!data || isLoading}
+            onClick={() => void exportCommission()}
+            disabled={!data || isLoading || isExporting}
           >
-            <Download className="h-4 w-4" />
-            Export CSV
+            {isExporting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Menyiapkan...
+              </>
+            ) : (
+              <>
+                <Download className="h-4 w-4" />
+                Export Excel
+              </>
+            )}
           </Button>
         }
       />

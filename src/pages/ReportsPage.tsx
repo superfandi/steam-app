@@ -51,7 +51,19 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { useReport } from "@/hooks/useReport"
-import { downloadCsv } from "@/lib/csv"
+import {
+  addRow,
+  addSectionLabel,
+  addStatRow,
+  addTableHeader,
+  addTitleBlock,
+  addTotalsRow,
+  createWorkbook,
+  freezeRows,
+  saveWorkbook,
+  setColumnWidths,
+  setupPrint,
+} from "@/lib/excel-export"
 import {
   formatCompactRupiah,
   formatDayLabel,
@@ -64,7 +76,6 @@ import { getReportPeriods, todayJakartaIso } from "@/lib/periods"
 import { PAYMENT_METHOD_LABELS } from "@/lib/constants"
 import {
   fetchTransactionsInRangeForExport,
-  type TransactionRowWithCashier,
 } from "@/services/transaction.service"
 import type { PaymentMethod, ReportDailyRow } from "@/types"
 
@@ -133,7 +144,7 @@ function ReportTooltip({
 /**
  * Laporan Pendapatan:
  * preset periode + rentang kustom (Asia/Jakarta), ringkasan pendapatan,
- * breakdown metode pembayaran, grafik & rekap harian, export CSV.
+ * breakdown metode pembayaran, grafik & rekap harian, export Excel.
  * Data dari RPC get_report — transaksi 'cancelled' tidak dihitung.
  */
 export default function ReportsPage() {
@@ -148,6 +159,7 @@ export default function ReportsPage() {
   const end = activePeriod ? activePeriod.end : customEnd
 
   const { data, isLoading, error, reload } = useReport(start, end)
+  const [isExportingSummary, setIsExportingSummary] = useState(false)
   const [isExportingTransactions, setIsExportingTransactions] = useState(false)
 
   function applyCustomRange() {
@@ -163,48 +175,88 @@ export default function ReportsPage() {
     setPeriodKey("custom")
   }
 
-  /* ---------------- Export CSV ---------------- */
+  /* ---------------- Export Excel (.xlsx) ---------------- */
 
-  function exportSummary() {
+  async function exportSummary() {
     if (!data) return
-    const t = data.totals
+    setIsExportingSummary(true)
+    try {
+      const t = data.totals
+      const wb = await createWorkbook()
+      const sheet = wb.addWorksheet("Ringkasan")
 
-    downloadCsv(
-      `laporan-ringkasan_${start}_s.d._${end}.csv`,
-      ["Laporan Pendapatan — WASH POS", `Periode: ${start} s/d ${end}`, `Dibuat: ${formatDateTimeWibPlain(new Date().toISOString())} WIB`],
-      [
-        [""],
-        ["Ringkasan"],
-        ["Pendapatan Total (Lunas)", t.revenue],
-        ["Jumlah Transaksi Lunas", t.transaction_count],
-        ["Pendapatan Motor", t.motor_revenue],
-        ["Pendapatan Mobil", t.mobil_revenue],
-        ["Tunai", t.cash_revenue],
-        ["QRIS", t.qris_revenue],
-        ["Transfer", t.transfer_revenue],
-        ["Transaksi Dibatalkan (tidak dihitung)", t.cancelled_count],
-        [""],
-        ["Rekap Harian"],
+      // Lebar kolom: label statistik lebar, kolom uang pas konten.
+      setColumnWidths(sheet, [32, 18, 19, 19, 15, 15, 15, 19])
+      setupPrint(sheet)
+
+      const span = 8
+      let row = addTitleBlock(
+        sheet,
+        "WASH POS — Laporan Pendapatan",
         [
-          "Tanggal",
-          "Transaksi Lunas",
-          "Pendapatan Motor",
-          "Pendapatan Mobil",
-          "Tunai",
-          "QRIS",
-          "Transfer",
-          "Total Pendapatan",
+          `Periode: ${data.start_date} s/d ${data.end_date} (WIB)`,
+          `Dibuat: ${formatDateTimeWibPlain(new Date().toISOString())} WIB`,
         ],
-        ...data.daily.map((d) => [
-          d.day,
-          d.transaction_count,
-          d.motor_revenue,
-          d.mobil_revenue,
-          d.cash_revenue,
-          d.qris_revenue,
-          d.transfer_revenue,
-          d.revenue,
-        ]),
+        span,
+      )
+
+      // Seksi 1: ringkasan statistik (label + nilai).
+      row = addSectionLabel(sheet, row, "Ringkasan Periode", 2)
+      row = addStatRow(sheet, row, "Pendapatan Total (Lunas)", t.revenue, true)
+      row = addStatRow(
+        sheet,
+        row,
+        "Jumlah Transaksi Lunas",
+        t.transaction_count,
+      )
+      row = addStatRow(sheet, row, "Pendapatan Motor", t.motor_revenue, true)
+      row = addStatRow(sheet, row, "Pendapatan Mobil", t.mobil_revenue, true)
+      row = addStatRow(sheet, row, "Pembayaran Tunai", t.cash_revenue, true)
+      row = addStatRow(sheet, row, "Pembayaran QRIS", t.qris_revenue, true)
+      row = addStatRow(sheet, row, "Pembayaran Transfer", t.transfer_revenue, true)
+      row = addStatRow(
+        sheet,
+        row,
+        "Transaksi Dibatalkan (tidak dihitung)",
+        t.cancelled_count,
+      )
+      row += 1 // baris kosong pemisah
+
+      // Seksi 2: rekap harian.
+      row = addSectionLabel(sheet, row, "Rekap Harian", span)
+      row = addTableHeader(sheet, row, [
+        "Tanggal",
+        "Transaksi Lunas",
+        "Pendapatan Motor (Rp)",
+        "Pendapatan Mobil (Rp)",
+        "Tunai (Rp)",
+        "QRIS (Rp)",
+        "Transfer (Rp)",
+        "Total Pendapatan (Rp)",
+      ])
+      const moneyCols = [2, 3, 4, 5, 6, 7]
+      let zebraIndex = 0
+      for (const d of data.daily) {
+        row = addRow(
+          sheet,
+          row,
+          [
+            d.day,
+            d.transaction_count,
+            d.motor_revenue,
+            d.mobil_revenue,
+            d.cash_revenue,
+            d.qris_revenue,
+            d.transfer_revenue,
+            d.revenue,
+          ],
+          { moneyCols, zebraIndex },
+        )
+        zebraIndex += 1
+      }
+      addTotalsRow(
+        sheet,
+        row,
         [
           "Total",
           t.transaction_count,
@@ -215,9 +267,24 @@ export default function ReportsPage() {
           t.transfer_revenue,
           t.revenue,
         ],
-      ],
-    )
-    toast.success("Ringkasan laporan berhasil diunduh.")
+        moneyCols,
+      )
+
+      await saveWorkbook(
+        wb,
+        `laporan-ringkasan_${data.start_date}_s.d._${data.end_date}.xlsx`,
+      )
+      toast.success("Ringkasan laporan berhasil diunduh.")
+    } catch (err) {
+      console.error("exportSummary:", err)
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Gagal export ringkasan. Silakan coba lagi.",
+      )
+    } finally {
+      setIsExportingSummary(false)
+    }
   }
 
   async function exportTransactions() {
@@ -230,49 +297,89 @@ export default function ReportsPage() {
         nextDayStartIsoJakarta(to),
       )
 
-      downloadCsv(
-        `laporan-transaksi_${from}_s.d._${to}.csv`,
+      const wb = await createWorkbook()
+      const sheet = wb.addWorksheet("Transaksi")
+
+      // 16 kolom: Invoice..Alasan Pembatalan.
+      setColumnWidths(sheet, [
+        18, 19, 14, 18, 12, 9, 12, 11, 16, 12, 12, 10, 12, 14, 12, 30,
+      ])
+      setupPrint(sheet)
+
+      let row = addTitleBlock(
+        sheet,
+        "WASH POS — Laporan Transaksi",
         [
-          "Invoice",
-          "Tanggal (WIB)",
-          "Kasir",
-          "Pelanggan",
-          "No. Polisi",
-          "Jenis",
-          "Metode Bayar",
-          "Status",
-          "Karyawan",
-          "Komisi (Rp)",
-          "Subtotal",
-          "Diskon",
-          "Total",
-          "Tunai Diterima",
-          "Kembalian",
-          "Alasan Pembatalan",
+          `Periode: ${from} s/d ${to} (WIB)`,
+          `Dibuat: ${formatDateTimeWibPlain(new Date().toISOString())} WIB`,
         ],
-        rows.map((row: TransactionRowWithCashier) => [
-          row.invoice_number,
-          formatDateTimeWibPlain(row.created_at),
-          row.cashierName ?? "",
-          row.customer_name ?? "",
-          row.plate_number ?? "",
-          row.vehicle_type === "motor" ? "Motor" : "Mobil",
-          PAYMENT_METHOD_LABELS[row.payment_method],
-          row.payment_status === "paid"
-            ? "Lunas"
-            : row.payment_status === "cancelled"
-              ? "Dibatalkan"
-              : "Menunggu",
-          row.employeeName ?? "",
-          row.commission_amount,
-          row.subtotal,
-          row.discount,
-          row.total,
-          row.cash_received ?? "",
-          row.cash_change ?? "",
-          row.cancel_reason ?? "",
-        ]),
+        16,
       )
+
+      const headerRow = row
+      row = addTableHeader(sheet, row, [
+        "Invoice",
+        "Tanggal (WIB)",
+        "Kasir",
+        "Pelanggan",
+        "No. Polisi",
+        "Jenis",
+        "Metode Bayar",
+        "Status",
+        "Karyawan",
+        "Komisi (Rp)",
+        "Subtotal (Rp)",
+        "Diskon (Rp)",
+        "Total (Rp)",
+        "Tunai Diterima (Rp)",
+        "Kembalian (Rp)",
+        "Alasan Pembatalan",
+      ])
+      // Header tetap terlihat saat menggulir + bisa difilter dari Excel.
+      freezeRows(sheet, headerRow)
+      sheet.autoFilter = {
+        from: { row: headerRow, column: 1 },
+        to: { row: headerRow, column: 16 },
+      }
+
+      const moneyCols = [9, 10, 11, 12, 13, 14]
+      let zebraIndex = 0
+      for (const row_ of rows) {
+        row = addRow(
+          sheet,
+          row,
+          [
+            row_.invoice_number,
+            formatDateTimeWibPlain(row_.created_at),
+            row_.cashierName ?? "",
+            row_.customer_name ?? "",
+            row_.plate_number ?? "",
+            row_.vehicle_type === "motor" ? "Motor" : "Mobil",
+            PAYMENT_METHOD_LABELS[row_.payment_method],
+            row_.payment_status === "paid"
+              ? "Lunas"
+              : row_.payment_status === "cancelled"
+                ? "Dibatalkan"
+                : "Menunggu",
+            row_.employeeName ?? "",
+            row_.commission_amount,
+            row_.subtotal,
+            row_.discount,
+            row_.total,
+            row_.cash_received ?? "",
+            row_.cash_change ?? "",
+            row_.cancel_reason ?? "",
+          ],
+          {
+            moneyCols,
+            zebraIndex,
+            danger: row_.payment_status === "cancelled",
+          },
+        )
+        zebraIndex += 1
+      }
+
+      await saveWorkbook(wb, `laporan-transaksi_${from}_s.d._${to}.xlsx`)
       toast.success(`${rows.length} transaksi berhasil diunduh.`)
     } catch (err) {
       console.error("exportTransactions:", err)
@@ -356,11 +463,20 @@ export default function ReportsPage() {
           <>
             <Button
               variant="outline"
-              onClick={exportSummary}
-              disabled={!data || isLoading}
+              onClick={() => void exportSummary()}
+              disabled={!data || isLoading || isExportingSummary}
             >
-              <FileSpreadsheet className="h-4 w-4" />
-              Export Ringkasan
+              {isExportingSummary ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Menyiapkan...
+                </>
+              ) : (
+                <>
+                  <FileSpreadsheet className="h-4 w-4" />
+                  Export Ringkasan
+                </>
+              )}
             </Button>
             <Button
               onClick={() => void exportTransactions()}

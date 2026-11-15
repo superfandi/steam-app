@@ -15,8 +15,8 @@ Dibangun dengan React + TypeScript + Vite + Tailwind CSS + shadcn/ui, dengan Sup
 | **Struk** | Pratinjau & cetak thermal 80mm (`window.print()`), banner khusus transaksi dibatalkan, **kirim via WhatsApp pelanggan** (`wa.me`, pesan struk terisi otomatis) |
 | **Riwayat** | Pencarian invoice/polisi, filter tanggal–kendaraan–metode–status, pagination server-side, detail + cetak ulang, pembatalan ber-alasan |
 | **Karyawan** | CRUD karyawan pengerjakan (telepon, jabatan), persen komisi per karyawan, aktif/nonaktif |
-| **Komisi** | Komisi dihitung otomatis di database saat checkout (persen × total setelah diskon, snapshot), laporan per karyawan + rincian transaksi + export CSV, kartu komisi hari ini di dashboard |
-| **Laporan** | Preset periode + rentang kustom (zona WIB), grafik harian, breakdown metode bayar, rekap harian, **export CSV** (ringkasan & per-transaksi) |
+| **Komisi** | Komisi dihitung otomatis di database saat checkout (persen × total setelah diskon, snapshot), laporan per karyawan + rincian transaksi + **export Excel**, kartu komisi hari ini di dashboard |
+| **Laporan** | Preset periode + rentang kustom (zona WIB), grafik harian, breakdown metode bayar, rekap harian, **export Excel (.xlsx) berformat** (ringkasan & per-transaksi) |
 | **Prediksi Omzet** | Holt-Winters aditif (musiman mingguan, dihitung di frontend tanpa API) — proyeksi 7/14/30 hari + pita ±1σ + metrik akurasi MAPE/MAE dari backtest |
 | **Asisten Data (Chat)** | Chatbot Gemini di Edge Function — tanya pendapatan/transaksi/komisi dalam bahasa Indonesia; tool memanggil RPC **dengan token user** (RLS tetap berlaku); verifikasi admin di server; tombol melayang di semua halaman |
 
@@ -25,6 +25,7 @@ Dibangun dengan React + TypeScript + Vite + Tailwind CSS + shadcn/ui, dengan Sup
 - **React 19** + **TypeScript 7** (strict) + **Vite 8**
 - **Tailwind CSS 4** + **shadcn/ui** (Radix UI) + **lucide-react**
 - **React Router 7**, **React Hook Form + Zod**, **Recharts 3**, **sonner**
+- **ExcelJS** (lazy-loaded) untuk export laporan .xlsx berformat
 - **Supabase JS 2** (PostgreSQL + Row Level Security + RPC) + **Edge Functions** (Deno)
 - **Gemini API** (`gemini-3.8-flash` via secret `GEMINI_MODEL`, function calling) untuk asisten data
 - Code-splitting per halaman (React.lazy + Suspense)
@@ -229,7 +230,24 @@ Keamanan dirancang agar frontend **tidak bisa** mengubah angka penting:
 
 Semua batas "hari ini"/rentang dihitung di **Asia/Jakarta (WIB)** — di database
 (RPC) dan di aplikasi (`src/lib/format.ts`, `src/lib/periods.ts`). Laporan &
-export CSV memakai tanggal WIB, termasuk kolom `Tanggal (WIB)`.
+export Excel memakai tanggal WIB, termasuk kolom `Tanggal (WIB)`.
+
+## Export Excel (.xlsx)
+
+Export laporan menghasilkan file **Excel berformat profesional** (bukan CSV):
+
+- **Laporan → Export Ringkasan** — sheet berisi blok statistik periode
+  + tabel rekap harian dengan baris Total.
+- **Laporan → Export Transaksi** — rincian per transaksi (harga & komisi
+  tetap angka murni, bisa di-SUM), baris transaksi dibatalkan disorot merah,
+  header dibekukan (frozen) + tombol filter bawaan Excel.
+- **Komisi → Export Excel** — rekap per karyawan + rincian transaksi.
+
+Penyusunan file (`src/lib/excel-export.ts`): judul & info periode digabung
+(merged) di atas tabel, header biru bold putih, baris data zebra + border,
+kolom uang memakai format angka `#,##0`, halaman siap cetak (landscape,
+fit-to-width). Library ExcelJS dimuat **lazy** — hanya saat tombol export
+pertama kali ditekan.
 
 ## Cetak Struk Thermal 80mm
 
@@ -313,7 +331,7 @@ memuat data internal (komisi, nama kasir).
 **Laporan**
 - [ ] Preset & rentang kustom (tanggal terbalik otomatis ditukar).
 - [ ] Footer rekap harian = kartu ringkasan.
-- [ ] Export Ringkasan & Export Transaksi terbuka rapi di Excel (pemisah `;`, BOM).
+- [ ] Export Ringkasan & Export Transaksi menghasilkan .xlsx rapi di Excel (header biru, zebra, angka bisa di-SUM, transaksi dibatalkan merah).
 
 **Prediksi Omzet** (setelah migrasi 007)
 - [ ] Buka Laporan → kartu "Proyeksi Omzet" tampil: garis riwayat + garis proyeksi putus-putus + pita kisaran.
