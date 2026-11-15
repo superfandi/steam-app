@@ -1,0 +1,8 @@
+{
+  // Aktifkan bahasa Deno HANYA untuk folder Supabase Edge Functions.
+  // Wajib memasang ekstensi "Deno" (denoland.vscode-deno) agar berlaku —
+  // tanpa ekstensi, pengaturan ini diabaikan (tidak berdampak apa pun).
+  "deno.enable": false,
+  "deno.enablePaths": ["supabase/functions"],
+  "deno.lint": false
+}
