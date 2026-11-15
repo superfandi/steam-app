@@ -27,7 +27,7 @@ Dibangun dengan React + TypeScript + Vite + Tailwind CSS + shadcn/ui, dengan Sup
 - **React Router 7**, **React Hook Form + Zod**, **Recharts 3**, **sonner**
 - **ExcelJS** (lazy-loaded) untuk export laporan .xlsx berformat
 - **Supabase JS 2** (PostgreSQL + Row Level Security + RPC) + **Edge Functions** (Deno)
-- **Gemini API** (`gemini-3.8-flash` via secret `GEMINI_MODEL`, function calling) untuk asisten data
+- **Gemini API** (`gemini-3.5-flash-lite` via secret `GEMINI_MODEL`, function calling) untuk asisten data
 - Code-splitting per halaman (React.lazy + Suspense)
 
 ## Prasyarat
@@ -146,14 +146,14 @@ free tier cukup untuk pemakaian admin harian.
   dipakai sudah dihentikan Google. Ganti nama model TANPA edit kode:
   tambahkan secret `GEMINI_MODEL` = nama model terbaru (mis.
   `gemini-3.8-flash`) di **Edge Functions → Secrets**, lalu deploy ulang
-  fungsi. Kode ini default ke `gemini-3.8-flash`.
-- **Chat terasa lambat (beberapa detik)** → normal pada model reasoning:
-  setiap putaran memuat waktu berpikir model + pemanggilan tool + putaran
-  jawaban terakhir. Kode sudah memakai level thinking `low` (tercepat yang
-  valid di `gemini-3.8-flash`) dan mencatat durasi tiap putaran ke log —
-  cek **Edge Functions → Logs** untuk melihat di mana waktunya habis.
-  Ingin lebih cepat lagi? set secret `GEMINI_MODEL` =
-  `gemini-3.5-flash-lite` (thinking default "minimal", paling cepat).
+  fungsi. Kode ini default ke `gemini-3.5-flash-lite`.
+- **Chat terasa lambat (beberapa detik)** → penyebab utamanya adalah model:
+  `gemini-3.8-flash` (reasoning) berpikir sebelum menjawab di setiap putaran.
+  Kode ini kini default ke `gemini-3.5-flash-lite` — model paling cepat
+  (thinking default "minimal", penerus resmi `gemini-2.5-flash`). Kode juga
+  mencatat durasi tiap putaran ke log — cek **Edge Functions → Logs**
+  (`chat: Gemini putaran N selesai dalam X ms`) untuk melihat sisa waktu
+  di mana. Kalau log tidak muncul berarti fungsi belum di-re-deploy.
 - **"Sesi login tidak valid atau sudah kedaluwarsa"** → permintaan ditolak
   platform Supabase sebelum fungsi berjalan (token sesi tidak ikut / tidak
   valid — bukan masalah Gemini). **Keluar (logout) lalu login ulang**, lalu

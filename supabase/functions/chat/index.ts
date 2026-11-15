@@ -11,7 +11,7 @@
 //   Dashboard → Edge Functions → Secrets → GEMINI_API_KEY
 //   (atau: supabase secrets set GEMINI_API_KEY=...)
 // Secret (opsional):
-//   GEMINI_MODEL — override nama model (default: gemini-3.8-flash)
+//   GEMINI_MODEL — override nama model (default: gemini-3.5-flash-lite)
 //
 // PENTAG MENDEPLOY: hapus SELURUH isi editor (Ctrl+A) sebelum menempel
 // kode ini — jangan sampai template bawaan dashboard ikut tersisa.
@@ -28,8 +28,21 @@ const CORS_HEADERS = {
 // Nama model bisa dioverride lewat secret GEMINI_MODEL tanpa edit kode —
 // berguna bila Google menghentikan model ini lagi di masa depan
 // (Dashboard → Edge Functions → Secrets → GEMINI_MODEL).
-const GEMINI_MODEL = Deno.env.get("GEMINI_MODEL") ?? "gemini-3.8-flash"
+//
+// Default: gemini-3.5-flash-lite — model paling cepat & murah untuk
+// tugas data (per Google: penerus resmi gemini-2.5-flash, thinking
+// default "minimal"). Asisten chat kita hanya membaca angka dari RPC,
+// bukan menalar berat — model reasoning (3.6/3.8) hanya menambah
+// latensi tanpa manfaat. Untuk jawaban yang lebih "cerdas", set secret
+// GEMINI_MODEL = gemini-3.8-flash.
+const GEMINI_MODEL = Deno.env.get("GEMINI_MODEL") ?? "gemini-3.5-flash-lite"
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
+
+// Konfigurasi thinking hanya untuk model reasoning (keluarga non-lite,
+// mis. gemini-3.8-flash → level "low"). Model "lite" sudah berpikir
+// minimal secara bawaan — field thinkingLevel justru berisiko ditolak
+// (buang satu round-trip untuk retry) tanpa ada yang perlu ditekan.
+const SEND_THINKING_CONFIG = !GEMINI_MODEL.includes("lite")
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 
@@ -214,7 +227,7 @@ async function callGemini(
       }),
     })
 
-  let res = await post(true)
+  let res = await post(SEND_THINKING_CONFIG)
   let data = (await res.json()) as GeminiPayload
 
   // Fallback: bila model menolak thinkingConfig (mis. model lama/beda
