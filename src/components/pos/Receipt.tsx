@@ -5,6 +5,7 @@ import {
 } from "@/lib/constants"
 import type {
   PaymentMethod,
+  PaymentStatus,
   TransactionItemRow,
   TransactionRow,
   VehicleType,
@@ -27,6 +28,7 @@ export interface ReceiptData {
   discount: number
   total: number
   paymentMethod: PaymentMethod
+  paymentStatus: PaymentStatus
   cashReceived: number | null
   cashChange: number | null
 }
@@ -54,6 +56,7 @@ export function toReceiptData(
     discount: transaction.discount,
     total: transaction.total,
     paymentMethod: transaction.payment_method,
+    paymentStatus: transaction.payment_status,
     cashReceived: transaction.cash_received,
     cashChange: transaction.cash_change,
   }
@@ -93,6 +96,13 @@ export function Receipt({ data }: { data: ReceiptData }) {
       </div>
 
       <DashedDivider />
+
+      {/* Banner transaksi dibatalkan */}
+      {data.paymentStatus === "cancelled" && (
+        <p className="mb-2 rounded border border-red-300 bg-red-50 px-2 py-1 text-center text-[10px] font-bold tracking-widest text-red-700">
+          TRANSAKSI DIBATALKAN
+        </p>
+      )}
 
       {/* Info transaksi */}
       <div className="space-y-0.5">

@@ -76,3 +76,22 @@ export function formatDayLabel(isoDay: string): string {
   const [, month, day] = parts
   return `${day}/${month}`
 }
+
+/* ------------------------------------------------------------------ */
+/* Batas tanggal untuk query database (dalam UTC, sumber WIB)          */
+/* ------------------------------------------------------------------ */
+
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
+
+/** ISO UTC dari tengah malam WIB (00:00 Asia/Jakarta) untuk tanggal "yyyy-mm-dd". */
+export function dayStartIsoJakarta(dateStr: string): string {
+  if (!DATE_PATTERN.test(dateStr)) return ""
+  return new Date(`${dateStr}T00:00:00+07:00`).toISOString()
+}
+
+/** ISO UTC dari tengah malam WIB keesokan hari (batas atas eksklusif). */
+export function nextDayStartIsoJakarta(dateStr: string): string {
+  if (!DATE_PATTERN.test(dateStr)) return ""
+  const start = new Date(`${dateStr}T00:00:00+07:00`)
+  return new Date(start.getTime() + 24 * 60 * 60 * 1000).toISOString()
+}

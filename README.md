@@ -12,7 +12,7 @@ Dibangun dengan React + TypeScript + Vite + Tailwind CSS + shadcn/ui, dengan Sup
 | 2 | Supabase client, autentikasi admin, layout + sidebar | ✅ Selesai |
 | 3 | Dashboard + CRUD layanan | ✅ Selesai |
 | 4 | POS transaksi, invoice, struk | ✅ Selesai |
-| 5 | Riwayat transaksi + pembatalan | ⏳ Belum |
+| 5 | Riwayat transaksi + pembatalan | ✅ Selesai |
 | 6 | Laporan pendapatan + export | ⏳ Belum |
 | 7 | Testing, keamanan, dokumentasi lengkap | ⏳ Belum |
 
