@@ -131,6 +131,16 @@ npx supabase functions deploy chat
 **Biaya:** paket gratis Supabase menyertakan kuota Edge Function; Gemini
 free tier cukup untuk pemakaian admin harian.
 
+**Troubleshooting** — pesan error di panel chat dan artinya:
+- *"Tidak dapat menghubungi asisten... belum di-deploy"* → fungsi belum ada:
+  cek **Edge Functions** — harus ada fungsi bernama persis `chat`
+  (404 = nama salah / belum deploy).
+- *"Asisten mengalami error saat berjalan"* → fungsi ada tapi crash:
+  buka **Edge Functions → Logs** (biasanya `GEMINI_API_KEY` belum diset,
+  atau kode template bawaan belum diganti seluruhnya).
+- *"GEMINI_API_KEY belum diatur"* → tambahkan secret di
+  **Edge Functions → Secrets** lalu tunggu ±1 menit.
+
 ---
 
 ## Struktur Proyek

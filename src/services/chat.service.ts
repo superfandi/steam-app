@@ -1,4 +1,8 @@
-import { FunctionsHttpError } from "@supabase/supabase-js"
+import {
+  FunctionsFetchError,
+  FunctionsHttpError,
+  FunctionsRelayError,
+} from "@supabase/supabase-js"
 
 import { supabase } from "@/lib/supabase"
 
@@ -24,6 +28,16 @@ export async function sendChatMessage(
     if (error instanceof FunctionsHttpError) {
       const detail = (await error.context.json()) as { error?: string }
       throw new Error(detail.error ?? "Asisten gagal merespons. Coba lagi.")
+    }
+    if (error instanceof FunctionsRelayError) {
+      throw new Error(
+        "Asisten mengalami error saat berjalan. Periksa log fungsi \"chat\" di Supabase Dashboard (Edge Functions → Logs).",
+      )
+    }
+    if (error instanceof FunctionsFetchError) {
+      throw new Error(
+        'Tidak dapat menghubungi asisten. Kemungkinan Edge Function "chat" belum di-deploy atau nama fungsi tidak tepat — ikuti README §5, lalu coba lagi.',
+      )
     }
     throw new Error("Tidak dapat menghubungi asisten. Periksa koneksi internet.")
   }
