@@ -158,13 +158,30 @@ export function buildQueueMessageText(
     case "selesai":
       return (
         `*Pandawa Steam*\n\n` +
-        `Halo${greetingName}! Cucian Anda ${queueTag} sudah *SELESAI* ✅\n` +
+        `Halo${greetingName}! ${VEHICLE_TYPE_LABELS[data.vehicleType]} Anda ` +
+        `${queueTag} sudah *dicuci dan selesai* ✅\n` +
         `Silakan ke kasir untuk pembayaran ya 🙏\n` +
         `Terima kasih telah mempercayai kendaraan Anda kepada kami!`
       )
     case "batal":
       return ""
   }
+}
+
+/**
+ * Pesan khusus "sudah dicuci" — dikirim dari kartu antrian berstatus
+ * dikerjakan saat pencucian benar-benar rampung, TANPA mengubah status
+ * antrian (status selesai tetap lewat tombol "Tandai Selesai"/checkout).
+ */
+export function buildQueueWashedMessageText(data: QueueMessageData): string {
+  const greetingName = data.customerName ? ` ${data.customerName}` : ""
+  const vehicleLabel = VEHICLE_TYPE_LABELS[data.vehicleType]
+  return (
+    `*Pandawa Steam*\n\n` +
+    `Halo${greetingName}! ${vehicleLabel} Anda antrian ` +
+    `*#${formatQueueNumber(data.queueNumber)}* sudah selesai *DICUCI* ✨\n` +
+    `Silakan cek kendaraan Anda, lalu lanjut ke kasir untuk pembayaran ya 🙏`
+  )
 }
 
 /* ------------------------------------------------------------------ */

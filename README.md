@@ -310,6 +310,9 @@ masuk):
 3. **Kabar WhatsApp per tahap** — tombol *WA* di setiap kartu menyusun
    pesan sesuai status: sambutan + perkiraan tunggu (menunggu), "bersiap"
    (dipanggil), "sedang dikerjakan", dan "sudah selesai, silakan ke kasir".
+   Kartu berstatus *dikerjakan* juga punya tombol *Sudah Dicuci* untuk
+   mengabari pelanggan bahwa kendaraannya sudah rampung dicuci — tanpa
+   mengubah status antrian.
 4. **Buat Transaksi** dari kartu antrian (dipanggil/dikerjakan) membuka
    kasir dengan pelanggan, plat, No. WA, jenis kendaraan, dan layanan
    terisi otomatis. Setelah checkout sukses, antrian **otomatis ditandai

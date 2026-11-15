@@ -5,6 +5,7 @@ import {
   Ban,
   CheckCircle2,
   Clock,
+  Droplets,
   Hourglass,
   Loader2,
   Megaphone,
@@ -41,6 +42,7 @@ import { useQueueToday } from "@/hooks/useQueueToday"
 import { VEHICLE_TYPE_LABELS } from "@/lib/constants"
 import {
   buildQueueMessageText,
+  buildQueueWashedMessageText,
   formatQueueNumber,
   sendWhatsAppMessage,
 } from "@/lib/whatsapp"
@@ -131,6 +133,27 @@ function QueueCard({
         vehicleType: entry.vehicle_type,
         waitingAhead,
         estimateMinutes: estimate,
+      }),
+    )
+    toast.success("Pesan dibuka di WhatsApp — tinggal tekan kirim.")
+  }
+
+  /** Kabar "sudah dicuci" — pesan khusus, tanpa mengubah status antrian. */
+  function handleSendWashed() {
+    if (!entry.customer_phone) {
+      toast.error("Pelanggan ini tidak mencantumkan nomor WhatsApp.")
+      return
+    }
+    sendWhatsAppMessage(
+      entry.customer_phone,
+      buildQueueWashedMessageText({
+        queueNumber: entry.queue_number,
+        customerName: entry.customer_name,
+        plateNumber: entry.plate_number,
+        serviceName: entry.service_name,
+        vehicleType: entry.vehicle_type,
+        waitingAhead: 0,
+        estimateMinutes: null,
       }),
     )
     toast.success("Pesan dibuka di WhatsApp — tinggal tekan kirim.")
@@ -238,6 +261,18 @@ function QueueCard({
               >
                 <MessageCircle className="h-3.5 w-3.5" />
                 WA
+              </Button>
+            )}
+            {entry.status === "dikerjakan" && entry.customer_phone && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 gap-1 border-sky-200 px-2.5 text-xs text-sky-700 hover:bg-sky-50 hover:text-sky-800"
+                title="Kabari pelanggan bahwa kendaraannya sudah selesai dicuci"
+                onClick={handleSendWashed}
+              >
+                <Droplets className="h-3.5 w-3.5" />
+                Sudah Dicuci
               </Button>
             )}
             {canCancel && (
