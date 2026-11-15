@@ -4,12 +4,14 @@ import { toast } from "sonner"
 import {
   BarChart3,
   Droplets,
+  HandCoins,
   LayoutDashboard,
   LogOut,
   Menu,
   ReceiptText,
   ShoppingCart,
   Sparkles,
+  Users,
   type LucideIcon,
 } from "lucide-react"
 
@@ -44,7 +46,9 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/pos", label: "Kasir (POS)", icon: ShoppingCart },
   { to: "/services", label: "Manajemen Layanan", icon: Sparkles },
+  { to: "/employees", label: "Karyawan", icon: Users },
   { to: "/history", label: "Riwayat Transaksi", icon: ReceiptText },
+  { to: "/commissions", label: "Komisi", icon: HandCoins },
   { to: "/reports", label: "Laporan", icon: BarChart3 },
 ]
 

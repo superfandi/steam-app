@@ -25,6 +25,18 @@ export interface ServiceRow {
   updated_at: string
 }
 
+export interface EmployeeRow {
+  id: string
+  name: string
+  phone: string | null
+  position: string | null
+  /** Persen komisi dari total transaksi (0-100). */
+  commission_percent: number
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
 export interface TransactionRow {
   id: string
   invoice_number: string
@@ -39,6 +51,10 @@ export interface TransactionRow {
   payment_status: PaymentStatus
   cash_received: number | null
   cash_change: number | null
+  /** Karyawan yang mengerjakan (opsional). */
+  employee_id: string | null
+  /** Snapshot komisi karyawan (rupiah) saat transaksi dibuat. */
+  commission_amount: number
   cancel_reason: string | null
   paid_at: string | null
   cancelled_at: string | null
@@ -77,6 +93,7 @@ export interface DashboardSummary {
   date: string
   today_revenue: number
   today_transactions: number
+  today_commission: number
   today_motor: number
   today_mobil: number
   payment_summary: DashboardPaymentSummaryItem[]
@@ -133,4 +150,42 @@ export interface CreateTransactionResult {
   total: number
   payment_method: PaymentMethod
   cash_change: number | null
+  employee_name: string | null
+  commission_amount: number
+}
+
+/* ------------------------------------------------------------------ */
+/* Bentuk hasil RPC get_commission_report()                            */
+/* ------------------------------------------------------------------ */
+
+export interface CommissionReportTotals {
+  total_commission: number
+  transaction_count: number
+  employee_count: number
+}
+
+export interface CommissionEmployeeRow {
+  employee_id: string
+  name: string
+  position: string | null
+  transaction_count: number
+  commission: number
+}
+
+export interface CommissionTransactionRow {
+  id: string
+  invoice_number: string
+  /** Tanggal WIB "yyyy-mm-dd". */
+  day: string
+  employee_name: string
+  total: number
+  commission: number
+}
+
+export interface CommissionReport {
+  start_date: string
+  end_date: string
+  totals: CommissionReportTotals
+  per_employee: CommissionEmployeeRow[]
+  transactions: CommissionTransactionRow[]
 }

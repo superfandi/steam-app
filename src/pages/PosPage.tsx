@@ -43,9 +43,17 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAuth } from "@/hooks/useAuth"
+import { useActiveEmployees } from "@/hooks/useEmployees"
 import { usePosCart } from "@/hooks/usePosCart"
 import { usePosServices } from "@/hooks/usePosServices"
 import { formatRupiah } from "@/lib/format"
@@ -92,11 +100,29 @@ export default function PosPage() {
   // Keranjang
   const cart = usePosCart()
 
+  // Karyawan pengerjakan (opsional) — komisi dihitung di database.
+  const {
+    employees: activeEmployees,
+    isLoading: isLoadingEmployees,
+    error: employeesError,
+    reload: reloadEmployees,
+  } = useActiveEmployees()
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState("")
+
   // Form transaksi
   const [customerName, setCustomerName] = useState("")
   const [plateNumber, setPlateNumber] = useState("")
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash")
   const [cashInput, setCashInput] = useState("")
+
+  const selectedEmployee =
+    activeEmployees.find((employee) => employee.id === selectedEmployeeId) ??
+    null
+
+  /** Estimasi komisi untuk preview — angka final dihitung database. */
+  const commissionEstimate = selectedEmployee
+    ? Math.floor((cart.total * selectedEmployee.commission_percent) / 100)
+    : null
 
   const cashReceived =
     paymentMethod === "cash" ? parseMoney(cashInput) : null
@@ -162,6 +188,7 @@ export default function PosPage() {
         customerName: customerName.trim() || null,
         plateNumber: plateNumber.trim() || null,
         cashReceived: paymentMethod === "cash" ? cashReceived : null,
+        employeeId: selectedEmployee ? selectedEmployee.id : null,
       })
 
       // 2) Ambil data lengkap (header + item snapshot) untuk struk.
@@ -176,6 +203,7 @@ export default function PosPage() {
       setPlateNumber("")
       setCashInput("")
       setPaymentMethod("cash")
+      setSelectedEmployeeId("")
 
       toast.success(`Transaksi ${result.invoice_number} berhasil disimpan.`)
     } catch (err) {
@@ -403,6 +431,60 @@ export default function PosPage() {
                     </div>
                   </div>
 
+                  {/* Karyawan pengerjakan (opsional) */}
+                  {employeesError ? (
+                    <div className="flex items-center justify-between rounded-lg border p-2.5 text-xs">
+                      <span className="text-muted-foreground">
+                        Gagal memuat daftar karyawan.
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7"
+                        onClick={() => void reloadEmployees()}
+                      >
+                        Coba Lagi
+                      </Button>
+                    </div>
+                  ) : isLoadingEmployees ? (
+                    <Skeleton className="h-14 rounded-lg" />
+                  ) : activeEmployees.length > 0 ? (
+                    <div className="space-y-1.5">
+                      <Label htmlFor="pos-employee" className="text-xs">
+                        Karyawan Pengerjakan{" "}
+                        <span className="text-xs text-muted-foreground">
+                          (opsional)
+                        </span>
+                      </Label>
+                      <Select
+                        value={selectedEmployeeId || "none"}
+                        onValueChange={(value) =>
+                          setSelectedEmployeeId(value === "none" ? "" : value)
+                        }
+                      >
+                        <SelectTrigger id="pos-employee" className="w-full">
+                          <SelectValue placeholder="Pilih karyawan..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">— Tanpa Karyawan —</SelectItem>
+                          {activeEmployees.map((employee) => (
+                            <SelectItem key={employee.id} value={employee.id}>
+                              {employee.name}
+                              {employee.commission_percent > 0 &&
+                                ` · ${employee.commission_percent}%`}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {selectedEmployee && (
+                        <p className="text-xs text-muted-foreground">
+                          Komisi ≈ {formatRupiah(commissionEstimate ?? 0)} (
+                          {selectedEmployee.commission_percent}% dari total)
+                        </p>
+                      )}
+                    </div>
+                  ) : null}
+
                   {/* Ringkasan + diskon */}
                   <div className="space-y-2.5 rounded-lg bg-muted/50 p-3">
                     <div className="flex justify-between text-sm">
@@ -610,6 +692,8 @@ export default function PosPage() {
         paymentMethod={paymentMethod}
         cashReceived={cashReceived}
         cashChange={cashChange}
+        employeeName={selectedEmployee ? selectedEmployee.name : null}
+        commission={selectedEmployee ? commissionEstimate : null}
         customerName={customerName}
         plateNumber={plateNumber}
         isProcessing={isProcessing}

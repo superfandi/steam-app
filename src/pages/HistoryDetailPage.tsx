@@ -119,7 +119,7 @@ export default function HistoryDetailPage() {
     )
   }
 
-  const { transaction, items, cashierName } = detail
+  const { transaction, items, cashierName, employeeName } = detail
   const isCancelled = transaction.payment_status === "cancelled"
 
   return (
@@ -167,6 +167,13 @@ export default function HistoryDetailPage() {
             <CardContent className="space-y-2.5 text-sm">
               <InfoRow label="Tanggal" value={formatDateTime(transaction.created_at)} />
               <InfoRow label="Kasir" value={cashierName ?? "—"} />
+              <InfoRow label="Karyawan" value={employeeName ?? "—"} />
+              {employeeName && (
+                <InfoRow
+                  label="Komisi Karyawan"
+                  value={formatRupiah(transaction.commission_amount)}
+                />
+              )}
               <InfoRow
                 label="Pelanggan"
                 value={transaction.customer_name ?? "—"}
@@ -291,7 +298,12 @@ export default function HistoryDetailPage() {
             </CardHeader>
             <CardContent>
               <Receipt
-                data={toReceiptData(transaction, items, cashierName)}
+                data={toReceiptData(
+                  transaction,
+                  items,
+                  cashierName,
+                  employeeName,
+                )}
               />
             </CardContent>
           </Card>

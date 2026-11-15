@@ -5,6 +5,7 @@ import {
   Bike,
   Car,
   CloudAlert,
+  HandCoins,
   Landmark,
   QrCode,
   ReceiptText,
@@ -112,8 +113,8 @@ export default function DashboardPage() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
+        <div className="grid grid-cols-2 gap-4 xl:grid-cols-5">
+          {Array.from({ length: 5 }).map((_, i) => (
             <Skeleton key={i} className="h-28 rounded-xl" />
           ))}
         </div>
@@ -175,12 +176,18 @@ export default function DashboardPage() {
       </div>
 
       {/* Statistik hari ini */}
-      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 xl:grid-cols-5">
         <StatCard
           icon={Wallet}
           label="Pendapatan Hari Ini"
           value={formatRupiah(summary.today_revenue)}
           hint="Transaksi lunas (WIB)"
+        />
+        <StatCard
+          icon={HandCoins}
+          label="Komisi Hari Ini"
+          value={formatRupiah(summary.today_commission ?? 0)}
+          hint="Komisi karyawan (WIB)"
         />
         <StatCard
           icon={ReceiptText}

@@ -61,7 +61,12 @@ export function CheckoutSuccessDialog({
 
         {detail && (
           <Receipt
-            data={toReceiptData(detail.transaction, detail.items, cashierName)}
+            data={toReceiptData(
+              detail.transaction,
+              detail.items,
+              cashierName,
+              detail.employeeName,
+            )}
           />
         )}
 

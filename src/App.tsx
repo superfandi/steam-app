@@ -18,9 +18,11 @@ const LoginPage = lazy(() => import("@/pages/LoginPage"))
 const DashboardPage = lazy(() => import("@/pages/DashboardPage"))
 const PosPage = lazy(() => import("@/pages/PosPage"))
 const ServicesPage = lazy(() => import("@/pages/ServicesPage"))
+const EmployeesPage = lazy(() => import("@/pages/EmployeesPage"))
 const HistoryPage = lazy(() => import("@/pages/HistoryPage"))
 const HistoryDetailPage = lazy(() => import("@/pages/HistoryDetailPage"))
 const ReportsPage = lazy(() => import("@/pages/ReportsPage"))
+const CommissionsPage = lazy(() => import("@/pages/CommissionsPage"))
 const NotFoundPage = lazy(() => import("@/pages/NotFoundPage"))
 
 export default function App() {
@@ -40,8 +42,10 @@ export default function App() {
                   <Route index element={<DashboardPage />} />
                   <Route path="pos" element={<PosPage />} />
                   <Route path="services" element={<ServicesPage />} />
+                  <Route path="employees" element={<EmployeesPage />} />
                   <Route path="history" element={<HistoryPage />} />
                   <Route path="history/:id" element={<HistoryDetailPage />} />
+                  <Route path="commissions" element={<CommissionsPage />} />
                   <Route path="reports" element={<ReportsPage />} />
                 </Route>
               </Route>

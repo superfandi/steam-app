@@ -77,6 +77,16 @@ export function formatDayLabel(isoDay: string): string {
   return `${day}/${month}`
 }
 
+/** "2026-11-15" → "15 Nov 2026" (tanggal kalender, tanpa pergeseran zona). */
+export function formatIsoDayJakarta(iso: string): string {
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${iso}T00:00:00Z`))
+}
+
 /* ------------------------------------------------------------------ */
 /* Batas tanggal untuk query database (dalam UTC, sumber WIB)          */
 /* ------------------------------------------------------------------ */

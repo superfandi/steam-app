@@ -29,6 +29,10 @@ interface CheckoutConfirmDialogProps {
   paymentMethod: PaymentMethod
   cashReceived: number | null
   cashChange: number | null
+  /** Nama karyawan yang ditugaskan (null = tanpa karyawan). */
+  employeeName: string | null
+  /** Estimasi komisi karyawan — angka final dihitung database. */
+  commission: number | null
   customerName: string
   plateNumber: string
   isProcessing: boolean
@@ -52,6 +56,8 @@ export function CheckoutConfirmDialog({
   paymentMethod,
   cashReceived,
   cashChange,
+  employeeName,
+  commission,
   customerName,
   plateNumber,
   isProcessing,
@@ -145,6 +151,20 @@ export function CheckoutConfirmDialog({
               {PAYMENT_METHOD_LABELS[paymentMethod]}
             </span>
           </div>
+          {employeeName && (
+            <div className="mt-1 flex justify-between">
+              <span className="text-muted-foreground">Karyawan</span>
+              <span className="max-w-40 truncate font-medium">
+                {employeeName}
+              </span>
+            </div>
+          )}
+          {employeeName && commission !== null && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Komisi (estimasi)</span>
+              <span className="font-medium">{formatRupiah(commission)}</span>
+            </div>
+          )}
           {paymentMethod === "cash" && cashReceived !== null && (
             <>
               <div className="mt-1 flex justify-between">

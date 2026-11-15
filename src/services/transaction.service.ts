@@ -44,6 +44,8 @@ export interface CreateTransactionPayload {
   customerName: string | null
   plateNumber: string | null
   cashReceived: number | null
+  /** Karyawan yang mengerjakan (opsional; null = tanpa karyawan). */
+  employeeId: string | null
 }
 
 /**
@@ -77,6 +79,7 @@ export async function createTransaction(
     p_customer_name: input.customerName,
     p_plate_number: input.plateNumber,
     p_cash_received: input.cashReceived,
+    p_employee_id: input.employeeId,
   })
 
   if (error) {
@@ -96,18 +99,22 @@ export interface TransactionDetail {
   transaction: TransactionRow
   items: TransactionItemRow[]
   cashierName: string | null
+  /** Nama karyawan yang mengerjakan (join employees). */
+  employeeName: string | null
 }
 
 /**
  * Ambil satu transaksi beserta seluruh item-nya (untuk struk & detail)
- * termasuk nama kasir dari tabel profiles.
+ * termasuk nama kasir (profiles) dan nama karyawan (employees).
  */
 export async function fetchTransactionDetail(
   id: string,
 ): Promise<TransactionDetail> {
   const { data, error } = await supabase
     .from("transactions")
-    .select("*, transaction_items(*), cashier:profiles(full_name)")
+    .select(
+      "*, transaction_items(*), cashier:profiles(full_name), employee:employees(name)",
+    )
     .eq("id", id)
     .single()
 
@@ -119,14 +126,16 @@ export async function fetchTransactionDetail(
   const row = data as (TransactionRow & {
     transaction_items: TransactionItemRow[]
     cashier: { full_name: string } | null
+    employee: { name: string } | null
   }) | null
   if (!row) throw new Error("Transaksi tidak ditemukan.")
 
-  const { transaction_items: items, cashier, ...transaction } = row
+  const { transaction_items: items, cashier, employee, ...transaction } = row
   return {
     transaction: transaction as TransactionRow,
     items: items ?? [],
     cashierName: cashier?.full_name ?? null,
+    employeeName: employee?.name ?? null,
   }
 }
 
@@ -147,6 +156,8 @@ export interface TransactionListFilters {
 
 export interface TransactionRowWithCashier extends TransactionRow {
   cashierName: string | null
+  /** Nama karyawan yang mengerjakan (join employees). */
+  employeeName: string | null
 }
 
 export interface TransactionListResult {
@@ -170,7 +181,9 @@ export async function fetchTransactions(
 ): Promise<TransactionListResult> {
   let query = supabase
     .from("transactions")
-    .select("*, cashier:profiles(full_name)", { count: "exact" })
+    .select("*, cashier:profiles(full_name), employee:employees(name)", {
+      count: "exact",
+    })
 
   // --- Pencarian invoice / nomor polisi ---
   const term = sanitizeSearchTerm(filters.search)
@@ -214,9 +227,11 @@ export async function fetchTransactions(
 
   const rows = ((data ?? []) as Array<TransactionRow & {
     cashier: { full_name: string } | null
-  }>).map(({ cashier, ...txn }) => ({
+    employee: { name: string } | null
+  }>).map(({ cashier, employee, ...txn }) => ({
     ...(txn as TransactionRow),
     cashierName: cashier?.full_name ?? null,
+    employeeName: employee?.name ?? null,
   }))
 
   return { rows, total: count ?? 0 }
@@ -246,7 +261,7 @@ export async function fetchTransactionsInRangeForExport(
     const from = pageIndex * EXPORT_PAGE_SIZE
     const { data, error } = await supabase
       .from("transactions")
-      .select("*, cashier:profiles(full_name)")
+      .select("*, cashier:profiles(full_name), employee:employees(name)")
       .gte("created_at", startIsoUtc)
       .lt("created_at", endExclusiveIso)
       .order("created_at", { ascending: true })
@@ -259,9 +274,11 @@ export async function fetchTransactionsInRangeForExport(
 
     const rows = ((data ?? []) as Array<TransactionRow & {
       cashier: { full_name: string } | null
-    }>).map(({ cashier, ...txn }) => ({
+      employee: { name: string } | null
+    }>).map(({ cashier, employee, ...txn }) => ({
       ...(txn as TransactionRow),
       cashierName: cashier?.full_name ?? null,
+      employeeName: employee?.name ?? null,
     }))
 
     allRows.push(...rows)

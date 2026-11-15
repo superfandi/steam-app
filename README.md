@@ -14,6 +14,8 @@ Dibangun dengan React + TypeScript + Vite + Tailwind CSS + shadcn/ui, dengan Sup
 | **Kasir (POS)** | Dua panel (layanan + keranjang), diskon nominal, 3 metode bayar, kembalian otomatis, verifikasi QRIS/Transfer |
 | **Struk** | Pratinjau & cetak thermal 80mm (`window.print()`), banner khusus transaksi dibatalkan |
 | **Riwayat** | Pencarian invoice/polisi, filter tanggal–kendaraan–metode–status, pagination server-side, detail + cetak ulang, pembatalan ber-alasan |
+| **Karyawan** | CRUD karyawan pengerjakan (telepon, jabatan), persen komisi per karyawan, aktif/nonaktif |
+| **Komisi** | Komisi dihitung otomatis di database saat checkout (persen × total setelah diskon, snapshot), laporan per karyawan + rincian transaksi + export CSV, kartu komisi hari ini di dashboard |
 | **Laporan** | Preset periode + rentang kustom (zona WIB), grafik harian, breakdown metode bayar, rekap harian, **export CSV** (ringkasan & per-transaksi) |
 
 ## Teknologi
@@ -42,6 +44,8 @@ Dibangun dengan React + TypeScript + Vite + Tailwind CSS + shadcn/ui, dengan Sup
    | 2 | `supabase/migrations/002_rls_policies.sql` | Row Level Security semua tabel, kebijakan akses, revoke privilege (client tidak bisa menulis transaksi langsung) |
    | 3 | `supabase/migrations/003_functions_rpc.sql` | RPC `create_transaction`, `cancel_transaction`, `get_dashboard_summary`, `get_report` (zona Asia/Jakarta) + grant ke role `authenticated` |
    | 4 | `supabase/migrations/004_seed.sql` | 8 layanan contoh motor & mobil (idempotent) |
+   | 5 | `supabase/migrations/005_employees.sql` | Tabel `employees` (karyawan + persen komisi) + RLS admin-only |
+   | 6 | `supabase/migrations/006_transaction_commission.sql` | Kolom komisi di `transactions`, update RPC `create_transaction` (hitung & snapshot komisi di database), RPC `get_commission_report`, `get_dashboard_summary` + `today_commission` |
 
 3. **Pengaturan keamanan penting** — buka **Authentication → Providers → Email**
    dan **matikan "Allow new users to sign up"**. Setiap user auth baru otomatis
@@ -111,10 +115,14 @@ supabase/migrations/         # 4 file SQL (schema → RLS → RPC → seed)
 - **`profiles`** — profil admin (1:1 `auth.users`), dibuat otomatis oleh trigger.
 - **`services`** — master layanan; nama unik per jenis kendaraan, harga > 0,
   `is_active`; **tidak boleh dihapus** jika sudah dipakai transaksi (FK restrict).
+- **`employees`** — karyawan pengerjakan (tanpa akun login); nama unik,
+  `commission_percent` 0–100, `is_active`; tidak boleh dihapus jika sudah
+  ditugaskan di transaksi (FK restrict).
 - **`transactions`** — header: nomor invoice unik `INV-YYMMDD-NNNN` (sequence
   harian WIB + advisory lock), subtotal/diskon/total dengan constraint
   `total = subtotal − discount`, konsistensi tunai (`cash_received ≥ total`
-  untuk cash, `null` untuk QRIS/transfer).
+  untuk cash, `null` untuk QRIS/transfer), plus `employee_id` dan
+  **snapshot `commission_amount`**.
 - **`transaction_items`** — detail dengan **snapshot** nama & harga layanan;
   perubahan harga master tidak memengaruhi riwayat lama.
 
@@ -130,7 +138,11 @@ Keamanan dirancang agar frontend **tidak bisa** mengubah angka penting:
    - `create_transaction` — harga diambil murni dari tabel `services`
      (frontend hanya mengirim `service_id` + quantity), validasi layanan aktif
      & cocok jenis kendaraan, diskon ≤ subtotal, tunai ≥ total, atomic.
+     Karyawan (opsional) harus aktif; **komisi = floor(total × persen/100)
+     dihitung di database** dan di-snapshot ke `commission_amount`.
    - `cancel_transaction` — hanya admin, alasan wajib, tidak bisa dua kali.
+     Karena laporan komisi hanya menghitung transaksi `paid`, pembatalan
+     otomatis membatalkan komisinya.
 3. Hanya **publishable/anon key** yang dipakai frontend.
 4. Export/laporan membaca lewat kebijakan select `authenticated`.
 
@@ -181,6 +193,13 @@ export CSV memakai tanggal WIB, termasuk kolom `Tanggal (WIB)`.
 - [ ] Cari invoice & nomor polisi (parsial), filter kombinasi, pagination.
 - [ ] Detail: item dengan harga snapshot; batalkan dengan alasan → badge Dibatalkan + banner di struk + tidak dihitung dashboard/laporan.
 
+**Karyawan & Komisi**
+- [ ] Tambah karyawan (mis. 10%) → muncul di dropdown kasir.
+- [ ] Transaksi dengan karyawan → struk berisi "Operator", dashboard "Komisi Hari Ini" naik, halaman Komisi menampilkan rekap & rincian.
+- [ ] Batalkan transaksi berkomisi → komisi tidak lagi terhitung di laporan.
+- [ ] Hapus karyawan yang sudah ditugaskan → ditolak dengan saran nonaktifkan.
+- [ ] Ubah persen komisi → hanya berlaku untuk transaksi selanjutnya (snapshot).
+
 **Laporan**
 - [ ] Preset & rentang kustom (tanggal terbalik otomatis ditukar).
 - [ ] Footer rekap harian = kartu ringkasan.
@@ -200,5 +219,6 @@ export CSV memakai tanggal WIB, termasuk kolom `Tanggal (WIB)`.
 | 5 | Riwayat transaksi + pembatalan | ✅ Selesai |
 | 6 | Laporan pendapatan + export | ✅ Selesai |
 | 7 | Audit keamanan, code-splitting, responsif, dokumentasi | ✅ Selesai |
+| 8 | Kelola karyawan + komisi otomatis per transaksi | ✅ Selesai |
 
 **Semua fase selesai.** Aplikasi siap diuji end-to-end dan dideploy.

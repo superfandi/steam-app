@@ -31,13 +31,19 @@ export interface ReceiptData {
   paymentStatus: PaymentStatus
   cashReceived: number | null
   cashChange: number | null
+  /** Nama karyawan yang mengerjakan (opsional). */
+  operatorName: string | null
 }
 
-/** Petakan baris database + item menjadi data struk. */
+/**
+ * Petakan baris database + item menjadi data struk.
+ * `operatorName` = nama karyawan yang mengerjakan (opsional).
+ */
 export function toReceiptData(
   transaction: TransactionRow,
   items: TransactionItemRow[],
   cashierName: string | null,
+  operatorName: string | null = null,
 ): ReceiptData {
   return {
     invoiceNumber: transaction.invoice_number,
@@ -59,6 +65,7 @@ export function toReceiptData(
     paymentStatus: transaction.payment_status,
     cashReceived: transaction.cash_received,
     cashChange: transaction.cash_change,
+    operatorName,
   }
 }
 
@@ -112,6 +119,7 @@ export function Receipt({ data }: { data: ReceiptData }) {
         {data.customerName && <Row label="Pelanggan" value={data.customerName} />}
         {data.plateNumber && <Row label="No. Polisi" value={data.plateNumber} />}
         <Row label="Kendaraan" value={VEHICLE_TYPE_LABELS[data.vehicleType]} />
+        {data.operatorName && <Row label="Operator" value={data.operatorName} />}
       </div>
 
       <DashedDivider />

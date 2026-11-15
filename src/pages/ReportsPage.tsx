@@ -240,6 +240,8 @@ export default function ReportsPage() {
           "Jenis",
           "Metode Bayar",
           "Status",
+          "Karyawan",
+          "Komisi (Rp)",
           "Subtotal",
           "Diskon",
           "Total",
@@ -260,6 +262,8 @@ export default function ReportsPage() {
             : row.payment_status === "cancelled"
               ? "Dibatalkan"
               : "Menunggu",
+          row.employeeName ?? "",
+          row.commission_amount,
           row.subtotal,
           row.discount,
           row.total,
