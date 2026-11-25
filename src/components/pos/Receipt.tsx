@@ -101,7 +101,7 @@ export function Receipt({ data }: { data: ReceiptData }) {
     <div className="print-area mx-auto w-full max-w-[302px] rounded-lg border bg-white px-4 py-4 font-mono text-[11px] leading-relaxed text-slate-900 shadow-sm">
       {/* Kop */}
       <div className="text-center">
-        <p className="text-sm font-bold tracking-widest">Pandawa Steam</p>
+        <p className="text-sm font-bold tracking-widest">Mtwo Steam</p>
         <p className="text-[10px] text-slate-500">
           Layanan Cuci Motor &amp; Mobil
         </p>

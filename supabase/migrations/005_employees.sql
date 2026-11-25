@@ -1,5 +1,5 @@
 -- ============================================================================
--- Pandawa Steam - 005_employees.sql
+-- Mtwo Steam - 005_employees.sql
 -- Tabel karyawan pencucian + Row Level Security.
 --
 -- Model komisi:

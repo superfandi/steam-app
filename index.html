@@ -4,14 +4,29 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/washpos.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Pandawa Steam — Sistem Point of Sale berbasis web untuk usaha pencucian motor dan mobil" />
-    <title>Pandawa Steam — Point of Sale Cuci Kendaraan</title>
+    <meta name="description" content="Mtwo Steam — Sistem Point of Sale berbasis web untuk usaha pencucian motor dan mobil" />
+    <title>Mtwo Steam — Point of Sale Cuci Kendaraan</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
+    <script>
+      // Terapkan mode pagi/malam sebelum React mount agar tidak berkedip.
+      (function () {
+        try {
+          var stored = localStorage.getItem("mtwo-theme");
+          var dark =
+            stored === "dark" ||
+            (stored !== "light" &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.classList.toggle("dark", dark);
+        } catch (e) {
+          /* localStorage diblokir — pakai mode terang */
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

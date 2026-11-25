@@ -6,21 +6,26 @@ import { Navigate, useLocation, useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import {
   Bot,
+  CheckCircle2,
   Droplets,
   Eye,
   EyeOff,
   HandCoins,
   Loader2,
+  Moon,
   ReceiptText,
+  Sun,
   TrendingUp,
 } from "lucide-react"
 
+import { ForgotPasswordDialog } from "@/components/account/ForgotPasswordDialog"
 import { FullScreenLoader } from "@/components/shared/FullScreenLoader"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuth } from "@/hooks/useAuth"
+import { useTheme } from "@/hooks/useTheme"
 import { getAuthErrorMessage } from "@/services/auth.service"
 import { cn } from "cn"
 
@@ -58,14 +63,21 @@ const HIGHLIGHTS = [
  * Tidak ada registrasi publik — akun dibuat lewat Supabase Dashboard.
  */
 export default function LoginPage() {
-  const { session, loading, login } = useAuth()
+  const { session, loading, login, passwordRecovery } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const { isDark, toggleTheme } = useTheme()
 
   // Halaman asal sebelum dialihkan ke /login (untuk kembali setelah login).
-  const from = (location.state as { from?: string } | null)?.from ?? "/"
+  const navigationState = location.state as {
+    from?: string
+    passwordReset?: boolean
+  } | null
+  const from = navigationState?.from ?? "/"
+  const passwordResetSuccess = Boolean(navigationState?.passwordReset)
 
   const [showPassword, setShowPassword] = useState(false)
+  const [forgotOpen, setForgotOpen] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
 
   const form = useForm({
@@ -76,6 +88,12 @@ export default function LoginPage() {
   // Session masih dipulihkan → tampilkan loader.
   if (loading) {
     return <FullScreenLoader label="Memeriksa sesi..." />
+  }
+
+  // Sesi recovery hanya boleh mengakses halaman reset password.
+  // Syarat `session` mencegah loop bila penanda recovery sudah tidak valid.
+  if (passwordRecovery && session) {
+    return <Navigate to="/reset-password" replace />
   }
 
   // Sudah login → langsung ke halaman asal/dashboard.
@@ -97,7 +115,19 @@ export default function LoginPage() {
   })
 
   return (
-    <div className="grid min-h-screen bg-background lg:grid-cols-2">
+    <div className="relative grid min-h-screen bg-background lg:grid-cols-2">
+      {/* Toggle mode pagi/malam */}
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={toggleTheme}
+        title={isDark ? "Aktifkan mode pagi" : "Aktifkan mode malam"}
+        aria-label={isDark ? "Aktifkan mode pagi" : "Aktifkan mode malam"}
+        className="absolute top-4 right-4 z-10"
+      >
+        {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+      </Button>
+
       {/* ---------------- Panel branding (desktop) ---------------- */}
       <div className="relative hidden flex-col justify-between overflow-hidden bg-sidebar p-10 lg:flex">
         {/* Dekorasi latar lembut */}
@@ -114,7 +144,7 @@ export default function LoginPage() {
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
             <Droplets className="h-5 w-5 text-primary-foreground" />
           </div>
-          <p className="text-lg font-bold tracking-wide text-white">Pandawa Steam</p>
+          <p className="text-lg font-bold tracking-wide text-white">Mtwo Steam</p>
         </div>
 
         <div className="relative space-y-6">
@@ -123,7 +153,7 @@ export default function LoginPage() {
             laporan
           </h1>
           <p className="max-w-md text-sm text-sidebar-muted">
-            Pandawa Steam menyatukan kasir POS, riwayat transaksi, komisi
+            Mtwo Steam menyatukan kasir POS, riwayat transaksi, komisi
             karyawan, prediksi omzet, dan asisten data AI dalam satu aplikasi.
           </p>
           <ul className="space-y-3">
@@ -142,7 +172,7 @@ export default function LoginPage() {
         </div>
 
         <p className="relative text-xs text-sidebar-muted">
-          © {new Date().getFullYear()} Pandawa Steam. Seluruh hak cipta dilindungi.
+          © {new Date().getFullYear()} Mtwo Steam. Seluruh hak cipta dilindungi.
         </p>
       </div>
 
@@ -156,7 +186,7 @@ export default function LoginPage() {
                 <Droplets className="h-4 w-4 text-primary-foreground" />
               </div>
               <div>
-                <p className="text-sm font-bold">Pandawa Steam</p>
+                <p className="text-sm font-bold">Mtwo Steam</p>
                 <p className="text-[11px] text-muted-foreground">
                   Kasir Cuci Motor &amp; Mobil
                 </p>
@@ -168,6 +198,21 @@ export default function LoginPage() {
               Masuk untuk mengelola kasir, riwayat, laporan, dan komisi —
               satu akun untuk semuanya.
             </p>
+
+            {passwordResetSuccess && (
+              <div
+                role="status"
+                className="mt-4 rounded-lg border border-success/30 bg-success/5 px-4 py-3 text-sm"
+              >
+                <p className="flex items-center gap-2 font-semibold text-success">
+                  <CheckCircle2 className="h-4 w-4" aria-hidden />
+                  Password berhasil diperbarui
+                </p>
+                <p className="mt-1.5 text-muted-foreground">
+                  Silakan masuk menggunakan password baru Anda.
+                </p>
+              </div>
+            )}
 
             {formError && (
               <div className="mt-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
@@ -187,7 +232,7 @@ export default function LoginPage() {
                   id="email"
                   type="email"
                   autoComplete="email"
-                  placeholder="admin@pandawasteam.id"
+                  placeholder="admin@mtwosteam.id"
                   aria-invalid={Boolean(form.formState.errors.email)}
                   className={cn(
                     form.formState.errors.email &&
@@ -204,7 +249,16 @@ export default function LoginPage() {
 
               {/* Password */}
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Password</Label>
+                  <button
+                    type="button"
+                    onClick={() => setForgotOpen(true)}
+                    className="text-xs font-medium text-primary underline-offset-4 hover:underline"
+                  >
+                    Lupa password?
+                  </button>
+                </div>
                 <div className="relative">
                   <Input
                     id="password"
@@ -256,12 +310,15 @@ export default function LoginPage() {
             </form>
 
             <p className="mt-6 text-center text-xs text-muted-foreground">
-              Akun admin hanya dibuat oleh pengelola sistem — registrasi
-              mandiri tidak tersedia.
+              Akun admin hanya dibuat oleh pengelola sistem. Lupa email?
+              Hubungi pengelola sistem.
             </p>
           </CardContent>
         </Card>
       </div>
+
+      {/* Dialog permintaan tautan reset password */}
+      <ForgotPasswordDialog open={forgotOpen} onOpenChange={setForgotOpen} />
     </div>
   )
 }

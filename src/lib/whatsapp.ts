@@ -44,7 +44,7 @@ export function normalizePhone(raw: string): string | null {
 export function buildWhatsAppReceiptText(data: ReceiptData): string {
   const lines: string[] = []
 
-  lines.push("*Pandawa Steam*")
+  lines.push("*Mtwo Steam*")
   lines.push("Layanan Cuci Motor & Mobil")
   lines.push("─────────────────────")
   if (data.queueNumber != null) {
@@ -123,7 +123,7 @@ export function buildQueueMessageText(
   switch (status) {
     case "menunggu": {
       const lines: string[] = []
-      lines.push("*Pandawa Steam*")
+      lines.push("*Mtwo Steam*")
       lines.push("Layanan Cuci Motor & Mobil")
       lines.push("─────────────────────")
       lines.push(`Halo${greetingName}! 👋`)
@@ -145,19 +145,19 @@ export function buildQueueMessageText(
     }
     case "dipanggil":
       return (
-        `*Pandawa Steam*\n\n` +
+        `*Mtwo Steam*\n\n` +
         `Halo${greetingName}! ${queueTag} akan segera kami proses — ` +
         `mohon bersiap di lokasi ya 🙏`
       )
     case "dikerjakan":
       return (
-        `*Pandawa Steam*\n\n` +
+        `*Mtwo Steam*\n\n` +
         `Kendaraan Anda ${queueTag} sedang kami kerjakan ✨ ` +
         `Kami kabari lagi begitu selesai 🙏`
       )
     case "selesai":
       return (
-        `*Pandawa Steam*\n\n` +
+        `*Mtwo Steam*\n\n` +
         `Halo${greetingName}! ${VEHICLE_TYPE_LABELS[data.vehicleType]} Anda ` +
         `${queueTag} sudah *dicuci dan selesai* ✅\n` +
         `Silakan ke kasir untuk pembayaran ya 🙏\n` +
@@ -177,7 +177,7 @@ export function buildQueueWashedMessageText(data: QueueMessageData): string {
   const greetingName = data.customerName ? ` ${data.customerName}` : ""
   const vehicleLabel = VEHICLE_TYPE_LABELS[data.vehicleType]
   return (
-    `*Pandawa Steam*\n\n` +
+    `*Mtwo Steam*\n\n` +
     `Halo${greetingName}! ${vehicleLabel} Anda antrian ` +
     `*#${formatQueueNumber(data.queueNumber)}* sudah selesai *DICUCI* ✨\n` +
     `Silakan cek kendaraan Anda, lalu lanjut ke kasir untuk pembayaran ya 🙏`

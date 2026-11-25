@@ -1,5 +1,5 @@
 -- ============================================================================
--- Pandawa Steam - 006_transaction_commission.sql
+-- Mtwo Steam - 006_transaction_commission.sql
 -- Komisi karyawan pada transaksi:
 --   1. Kolom baru transactions.employee_id & transactions.commission_amount
 --      (snapshot nominal komisi saat checkout).

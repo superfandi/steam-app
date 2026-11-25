@@ -1,5 +1,5 @@
 -- ============================================================================
--- Pandawa Steam - 001_initial_schema.sql
+-- Mtwo Steam - 001_initial_schema.sql
 -- Tabel inti: profiles, services, transactions, transaction_items
 -- Konvensi:
 --   * Primary key  : UUID (gen_random_uuid)
@@ -21,7 +21,7 @@ create table if not exists public.profiles (
 );
 
 comment on table public.profiles is
-  'Profil pengguna Pandawa Steam (admin), terhubung 1:1 dengan auth.users.';
+  'Profil pengguna Mtwo Steam (admin), terhubung 1:1 dengan auth.users.';
 
 -- ---------------------------------------------------------------------------
 -- 2. SERVICES - master layanan pencucian

@@ -47,6 +47,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { useAuth } from "@/hooks/useAuth"
+import { useChartColors } from "@/hooks/useChartColors"
 import { useDashboard } from "@/hooks/useDashboard"
 import {
   formatCompactRupiah,
@@ -106,6 +107,7 @@ const METHOD_ICONS: Record<PaymentMethod, typeof Banknote> = {
  */
 export default function DashboardPage() {
   const { profile } = useAuth()
+  const chartColors = useChartColors()
   const { summary, recentTransactions, isLoading, error, reload } =
     useDashboard()
 
@@ -226,27 +228,35 @@ export default function DashboardPage() {
               >
                 <defs>
                   <linearGradient id="revenueFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#2563EB" stopOpacity={0.25} />
-                    <stop offset="100%" stopColor="#2563EB" stopOpacity={0} />
+                    <stop
+                      offset="0%"
+                      stopColor={chartColors.primary}
+                      stopOpacity={0.25}
+                    />
+                    <stop
+                      offset="100%"
+                      stopColor={chartColors.primary}
+                      stopOpacity={0}
+                    />
                   </linearGradient>
                 </defs>
                 <CartesianGrid
                   strokeDasharray="3 3"
                   vertical={false}
-                  stroke="#E2E8F0"
+                  stroke={chartColors.grid}
                 />
                 <XAxis
                   dataKey="label"
                   tickLine={false}
                   axisLine={false}
-                  tick={{ fontSize: 12, fill: "#64748B" }}
+                  tick={{ fontSize: 12, fill: chartColors.tick }}
                   interval="preserveStartEnd"
                 />
                 <YAxis
                   tickLine={false}
                   axisLine={false}
                   width={52}
-                  tick={{ fontSize: 12, fill: "#64748B" }}
+                  tick={{ fontSize: 12, fill: chartColors.tick }}
                   tickFormatter={(value: number) =>
                     formatCompactRupiah(Number(value))
                   }
@@ -255,7 +265,7 @@ export default function DashboardPage() {
                 <Area
                   type="monotone"
                   dataKey="revenue"
-                  stroke="#2563EB"
+                  stroke={chartColors.primary}
                   strokeWidth={2}
                   fill="url(#revenueFill)"
                   activeDot={{ r: 4 }}

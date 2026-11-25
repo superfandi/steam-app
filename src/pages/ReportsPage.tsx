@@ -50,6 +50,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { useChartColors } from "@/hooks/useChartColors"
 import { useReport } from "@/hooks/useReport"
 import {
   addRow,
@@ -149,6 +150,7 @@ function ReportTooltip({
  */
 export default function ReportsPage() {
   const periods = getReportPeriods()
+  const chartColors = useChartColors()
 
   const [periodKey, setPeriodKey] = useState("today")
   const [customStart, setCustomStart] = useState(defaultCustomStart)
@@ -192,7 +194,7 @@ export default function ReportsPage() {
       const span = 8
       let row = addTitleBlock(
         sheet,
-        "Pandawa Steam — Laporan Pendapatan",
+        "Mtwo Steam — Laporan Pendapatan",
         [
           `Periode: ${data.start_date} s/d ${data.end_date} (WIB)`,
           `Dibuat: ${formatDateTimeWibPlain(new Date().toISOString())} WIB`,
@@ -308,7 +310,7 @@ export default function ReportsPage() {
 
       let row = addTitleBlock(
         sheet,
-        "Pandawa Steam — Laporan Transaksi",
+        "Mtwo Steam — Laporan Transaksi",
         [
           `Periode: ${from} s/d ${to} (WIB)`,
           `Dibuat: ${formatDateTimeWibPlain(new Date().toISOString())} WIB`,
@@ -423,26 +425,29 @@ export default function ReportsPage() {
           <CartesianGrid
             strokeDasharray="3 3"
             vertical={false}
-            stroke="#E2E8F0"
+            stroke={chartColors.grid}
           />
           <XAxis
             dataKey="label"
             tickLine={false}
             axisLine={false}
-            tick={{ fontSize: 12, fill: "#64748B" }}
+            tick={{ fontSize: 12, fill: chartColors.tick }}
             interval="preserveStartEnd"
           />
           <YAxis
             tickLine={false}
             axisLine={false}
             width={52}
-            tick={{ fontSize: 12, fill: "#64748B" }}
+            tick={{ fontSize: 12, fill: chartColors.tick }}
             tickFormatter={(value: number) => formatCompactRupiah(Number(value))}
           />
-          <Tooltip content={<ReportTooltip />} />
+          <Tooltip
+            content={<ReportTooltip />}
+            cursor={{ fill: chartColors.cursor }}
+          />
           <Bar
             dataKey="revenue"
-            fill="#2563EB"
+            fill={chartColors.primary}
             radius={[4, 4, 0, 0]}
             maxBarSize={32}
           />

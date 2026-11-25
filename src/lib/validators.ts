@@ -99,3 +99,75 @@ export const queueFormSchema = z.object({
 })
 
 export type QueueFormValues = z.infer<typeof queueFormSchema>
+
+/**
+ * Skema validasi ganti email akun (menu Pengaturan Akun).
+ * Konfirmasi harus sama persis dengan email baru.
+ */
+export const changeEmailSchema = z
+  .object({
+    new_email: z.email({ message: "Format email baru tidak valid" }),
+    confirm_email: z.email({ message: "Format konfirmasi email tidak valid" }),
+  })
+  .refine((values) => values.new_email === values.confirm_email, {
+    message: "Konfirmasi email tidak cocok",
+    path: ["confirm_email"],
+  })
+
+export type ChangeEmailFormValues = z.infer<typeof changeEmailSchema>
+
+/**
+ * Skema validasi ganti password akun (menu Pengaturan Akun).
+ * Minimal 8 karakter — server Supabase dapat menambahkan aturan
+ * (angka/simbol) sesuai pengaturan proyek.
+ */
+export const changePasswordSchema = z
+  .object({
+    current_password: z.string().min(1, "Password saat ini wajib diisi"),
+    new_password: z
+      .string()
+      .min(8, "Password baru minimal 8 karakter")
+      .max(72, "Password baru maksimal 72 karakter"),
+    confirm_password: z.string().min(1, "Konfirmasi password wajib diisi"),
+  })
+  .refine((values) => values.new_password === values.confirm_password, {
+    message: "Konfirmasi password tidak cocok",
+    path: ["confirm_password"],
+  })
+  .refine((values) => values.new_password !== values.current_password, {
+    message: "Password baru harus berbeda dari password saat ini",
+    path: ["new_password"],
+  })
+
+export type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>
+
+/**
+ * Skema permintaan tautan reset password (dialog "Lupa Password").
+ * Email harus berformat valid; keberadaan akun tidak divalidasi di sini
+ * (pesan UI selalu netral untuk mencegah penebakan email terdaftar).
+ */
+export const forgotPasswordSchema = z.object({
+  email: z.email({ message: "Format email tidak valid" }),
+})
+
+export type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>
+
+/**
+ * Skema password baru dari tautan recovery (halaman /reset-password).
+ * Tidak ada field password lama — sesi recovery sudah membuktikan
+ * kepemilikan email.
+ */
+export const resetPasswordSchema = z
+  .object({
+    new_password: z
+      .string()
+      .min(8, "Password baru minimal 8 karakter")
+      .max(72, "Password baru maksimal 72 karakter"),
+    confirm_password: z.string().min(1, "Konfirmasi password wajib diisi"),
+  })
+  .refine((values) => values.new_password === values.confirm_password, {
+    message: "Konfirmasi password tidak cocok",
+    path: ["confirm_password"],
+  })
+
+export type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>

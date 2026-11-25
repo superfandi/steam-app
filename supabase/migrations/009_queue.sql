@@ -1,5 +1,5 @@
 -- ============================================================================
--- Pandawa Steam - 009_queue.sql
+-- Mtwo Steam - 009_queue.sql
 -- FITUR ANTRIAN + NOTIFIKASI WHATSAPP (Fase 12)
 --
 -- Ringkasan:
@@ -70,7 +70,7 @@ create trigger trg_queue_entries_updated_at
   for each row execute function public.set_updated_at();
 
 comment on table public.queue_entries is
-  'Antrian harian pelanggan Pandawa Steam — nomor reset per hari WIB, status bertahap, dan dapat terhubung ke transaksi POS.';
+  'Antrian harian pelanggan Mtwo Steam — nomor reset per hari WIB, status bertahap, dan dapat terhubung ke transaksi POS.';
 
 -- ---------------------------------------------------------------------------
 -- 2. RLS: hanya admin yang boleh membaca; menulis HANYA lewat RPC
@@ -156,7 +156,7 @@ begin
   ------------------------------------------------------------------
   -- Serialisasi nomor antrian harian (anti tabrakan antar-request).
   ------------------------------------------------------------------
-  perform pg_advisory_xact_lock(hashtext('pandawa_queue_seq'));
+  perform pg_advisory_xact_lock(hashtext('mtwo_queue_seq'));
 
   v_today     := (now() at time zone 'Asia/Jakarta')::date;
   v_day_start := v_today::timestamp at time zone 'Asia/Jakarta';

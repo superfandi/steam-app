@@ -5,19 +5,24 @@ import {
   BarChart3,
   Droplets,
   HandCoins,
+  KeyRound,
   LayoutDashboard,
   ListOrdered,
   LogOut,
+  Mail,
   Menu,
+  Moon,
   ReceiptText,
   ShoppingCart,
   Sparkles,
+  Sun,
   Users,
   type LucideIcon,
 } from "lucide-react"
 
 import { cn } from "cn"
 
+import { AccountSettingsDialog, type AccountTab } from "@/components/account/AccountSettingsDialog"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -34,6 +39,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 import { useAuth } from "@/hooks/useAuth"
+import { useTheme } from "@/hooks/useTheme"
 import { ChatWidget } from "@/components/chat/ChatWidget"
 
 interface NavItem {
@@ -63,7 +69,7 @@ function SidebarBrand() {
         <Droplets className="h-5 w-5 text-primary-foreground" />
       </div>
       <div className="min-w-0 whitespace-nowrap leading-tight lg:opacity-0 lg:transition-opacity lg:duration-200 lg:group-hover/sb:opacity-100">
-        <p className="text-sm font-bold tracking-wide text-white">Pandawa Steam</p>
+        <p className="text-sm font-bold tracking-wide text-white">Mtwo Steam</p>
         <p className="text-[11px] text-sidebar-muted">Cuci Motor &amp; Mobil</p>
       </div>
     </div>
@@ -146,8 +152,16 @@ function SidebarFooterCard({
  */
 export default function AdminLayout() {
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [accountDialogOpen, setAccountDialogOpen] = useState(false)
+  const [accountDialogTab, setAccountDialogTab] = useState<AccountTab>("email")
   const location = useLocation()
   const { user, profile, logout } = useAuth()
+  const { isDark, toggleTheme } = useTheme()
+
+  function openAccountDialog(tab: AccountTab) {
+    setAccountDialogTab(tab)
+    setAccountDialogOpen(true)
+  }
 
   const activeItem =
     NAV_ITEMS.find((item) =>
@@ -156,7 +170,7 @@ export default function AdminLayout() {
         : location.pathname.startsWith(item.to),
     ) ?? null
 
-  const pageTitle = activeItem?.label ?? "Pandawa Steam"
+  const pageTitle = activeItem?.label ?? "Mtwo Steam"
 
   const displayName = profile?.full_name?.trim() || "Admin"
   const email = user?.email ?? "-"
@@ -227,8 +241,24 @@ export default function AdminLayout() {
               {pageTitle}
             </h1>
 
-            {/* Menu akun (mobile & desktop) */}
-            <div className="ml-auto">
+            {/* Mode pagi/malam + menu akun (mobile & desktop) */}
+            <div className="ml-auto flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleTheme}
+                title={isDark ? "Aktifkan mode pagi" : "Aktifkan mode malam"}
+                aria-label={
+                  isDark ? "Aktifkan mode pagi" : "Aktifkan mode malam"
+                }
+              >
+                {isDark ? (
+                  <Sun className="h-5 w-5" />
+                ) : (
+                  <Moon className="h-5 w-5" />
+                )}
+              </Button>
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
@@ -246,6 +276,19 @@ export default function AdminLayout() {
                       {email}
                     </p>
                   </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onSelect={() => openAccountDialog("email")}
+                  >
+                    <Mail className="h-4 w-4" />
+                    Ganti Email
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() => openAccountDialog("password")}
+                  >
+                    <KeyRound className="h-4 w-4" />
+                    Ganti Password
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onSelect={() => void handleLogout()}
@@ -267,6 +310,13 @@ export default function AdminLayout() {
 
       {/* Asisten data (chat Gemini) — semua halaman */}
       <ChatWidget />
+
+      {/* Pengaturan akun (ganti email/password) */}
+      <AccountSettingsDialog
+        open={accountDialogOpen}
+        onOpenChange={setAccountDialogOpen}
+        initialTab={accountDialogTab}
+      />
     </div>
   )
 }

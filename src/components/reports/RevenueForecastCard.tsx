@@ -15,6 +15,7 @@ import { ErrorState } from "@/components/shared/ErrorState"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useForecast, type ForecastHorizon } from "@/hooks/useForecast"
+import { useChartColors } from "@/hooks/useChartColors"
 import type { ForecastResult } from "@/lib/forecast"
 import { formatCompactRupiah, formatDayLabel, formatRupiah } from "@/lib/format"
 import type { RevenueHistory } from "@/types"
@@ -27,9 +28,6 @@ const HORIZONS: Array<{ value: ForecastHorizon; label: string }> = [
   { value: 14, label: "14 Hari" },
   { value: 30, label: "30 Hari" },
 ]
-
-const COLOR_HISTORY = "#2563EB"
-const COLOR_BAND = "#94A3B8"
 
 interface ForecastChartPoint {
   label: string
@@ -127,6 +125,7 @@ function formatParam(value: number): string {
  */
 export function RevenueForecastCard() {
   const [horizon, setHorizon] = useState<ForecastHorizon>(7)
+  const chartColors = useChartColors()
   const { forecast, history, isLoading, error, reload } = useForecast(horizon)
 
   const chartData = useMemo(
@@ -219,7 +218,7 @@ export function RevenueForecastCard() {
               <span className="flex items-center gap-1.5">
                 <span
                   className="w-6 border-t-2"
-                  style={{ borderColor: COLOR_HISTORY }}
+                  style={{ borderColor: chartColors.primary }}
                   aria-hidden
                 />
                 Riwayat
@@ -227,7 +226,7 @@ export function RevenueForecastCard() {
               <span className="flex items-center gap-1.5">
                 <span
                   className="w-6 border-t-2 border-dashed"
-                  style={{ borderColor: COLOR_HISTORY }}
+                  style={{ borderColor: chartColors.primary }}
                   aria-hidden
                 />
                 Proyeksi
@@ -235,7 +234,7 @@ export function RevenueForecastCard() {
               <span className="flex items-center gap-1.5">
                 <span
                   className="w-6 border-t-2 border-dotted"
-                  style={{ borderColor: COLOR_BAND }}
+                  style={{ borderColor: chartColors.band }}
                   aria-hidden
                 />
                 Kisaran ±1σ
@@ -250,20 +249,20 @@ export function RevenueForecastCard() {
                 <CartesianGrid
                   strokeDasharray="3 3"
                   vertical={false}
-                  stroke="#E2E8F0"
+                  stroke={chartColors.grid}
                 />
                 <XAxis
                   dataKey="label"
                   tickLine={false}
                   axisLine={false}
-                  tick={{ fontSize: 12, fill: "#64748B" }}
+                  tick={{ fontSize: 12, fill: chartColors.tick }}
                   interval="preserveStartEnd"
                 />
                 <YAxis
                   tickLine={false}
                   axisLine={false}
                   width={52}
-                  tick={{ fontSize: 12, fill: "#64748B" }}
+                  tick={{ fontSize: 12, fill: chartColors.tick }}
                   tickFormatter={(value: number) =>
                     formatCompactRupiah(Number(value))
                   }
@@ -271,7 +270,7 @@ export function RevenueForecastCard() {
                 <Tooltip content={<ForecastTooltip />} />
                 <Line
                   dataKey="upper"
-                  stroke={COLOR_BAND}
+                  stroke={chartColors.band}
                   strokeDasharray="2 4"
                   strokeWidth={1}
                   dot={false}
@@ -279,7 +278,7 @@ export function RevenueForecastCard() {
                 />
                 <Line
                   dataKey="lower"
-                  stroke={COLOR_BAND}
+                  stroke={chartColors.band}
                   strokeDasharray="2 4"
                   strokeWidth={1}
                   dot={false}
@@ -287,14 +286,14 @@ export function RevenueForecastCard() {
                 />
                 <Line
                   dataKey="actual"
-                  stroke={COLOR_HISTORY}
+                  stroke={chartColors.primary}
                   strokeWidth={2}
                   dot={false}
                   connectNulls
                 />
                 <Line
                   dataKey="projected"
-                  stroke={COLOR_HISTORY}
+                  stroke={chartColors.primary}
                   strokeDasharray="6 4"
                   strokeWidth={2}
                   dot={false}

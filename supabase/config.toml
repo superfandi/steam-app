@@ -1,7 +1,7 @@
-# Konfigurasi Supabase CLI untuk Pandawa Steam.
+# Konfigurasi Supabase CLI untuk Mtwo Steam.
 # `project_id` dipakai saat `supabase link --project-ref <ref>`.
 
-project_id = "pandawa-steam"
+project_id = "mtwo-steam"
 
 [functions.chat]
 verify_jwt = true

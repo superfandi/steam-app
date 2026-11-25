@@ -7,10 +7,14 @@ import {
 } from "lucide-react"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
 
+import { useTheme } from "@/hooks/useTheme"
+
 const Toaster = ({ ...props }: ToasterProps) => {
+  const { isDark } = useTheme()
+
   return (
     <Sonner
-      theme="light"
+      theme={isDark ? "dark" : "light"}
       position="top-right"
       richColors
       className="toaster group"

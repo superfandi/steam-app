@@ -1,4 +1,4 @@
-# Pandawa Steam
+# Mtwo Steam
 
 Sistem Point of Sale (POS) berbasis web untuk usaha pencucian kendaraan **motor dan mobil**.
 Dibangun dengan React + TypeScript + Vite + Tailwind CSS + shadcn/ui, dengan Supabase
@@ -8,7 +8,7 @@ Dibangun dengan React + TypeScript + Vite + Tailwind CSS + shadcn/ui, dengan Sup
 
 | Modul | Kemampuan |
 |-------|-----------|
-| **Autentikasi** | Login admin saja (tanpa registrasi publik), sesi persisten, guard seluruh area admin |
+| **Autentikasi** | Login admin saja (tanpa registrasi publik), sesi persisten, guard seluruh area admin, **ganti email & password mandiri**, **lupa password via email** (tautan sekali pakai → halaman `/reset-password`), pemulihan email manual lewat Supabase |
 | **Dashboard** | 4 kartu statistik hari ini, grafik pendapatan 14 hari, ringkasan metode bayar, 8 transaksi terbaru |
 | **Manajemen Layanan** | CRUD layanan motor/mobil, harga Rupiah, pencarian, filter, aktif/nonaktif, proteksi hapus |
 | **Kasir (POS)** | Dua panel (layanan + keranjang), diskon nominal, 3 metode bayar, kembalian otomatis, verifikasi QRIS/Transfer |
@@ -18,8 +18,9 @@ Dibangun dengan React + TypeScript + Vite + Tailwind CSS + shadcn/ui, dengan Sup
 | **Karyawan** | CRUD karyawan pengerjakan (telepon, jabatan), persen komisi per karyawan, aktif/nonaktif |
 | **Komisi** | Komisi dihitung otomatis di database saat checkout (persen × total setelah diskon, snapshot), laporan per karyawan + rincian transaksi + **export Excel**, kartu komisi hari ini di dashboard |
 | **Laporan** | Preset periode + rentang kustom (zona WIB), grafik harian, breakdown metode bayar, rekap harian, **export Excel (.xlsx) berformat** (ringkasan & per-transaksi) |
-| **Prediksi Omzet** | Holt-Winters aditif (musiman mingguan, dihitung di frontend tanpa API) — proyeksi 7/14/30 hari + pita ±1σ + metrik akurasi MAPE/MAE dari backtest |
-| **Asisten Data (Chat)** | Chatbot Gemini di Edge Function — tanya pendapatan/transaksi/komisi dalam bahasa Indonesia; tool memanggil RPC **dengan token user** (RLS tetap berlaku); verifikasi admin di server; tombol melayang di semua halaman |
+| **Prediksi Omzet** | Holt-Winters aditif (musiman mingguan, dihitung di frontend tanpa API) — proyeksi 7/14/30 hari + pita ±1σ + metrik akurasi MAPE/MAE dari backtest; hasilnya juga bisa ditanyakan lewat asisten data |
+| **Mode Pagi & Malam** | Tema terang/gelap untuk seluruh aplikasi termasuk halaman login; pilihan tersimpan di `localStorage`, mengikuti preferensi sistem saat pertama dibuka, tanpa kedipan saat dimuat |
+| **Asisten Data (Chat)** | Chatbot Gemini di Edge Function — tanya pendapatan/transaksi/komisi/**prediksi omzet** dalam bahasa Indonesia; tool memanggil RPC **dengan token user** (RLS tetap berlaku); verifikasi admin di server; tombol melayang di semua halaman |
 
 ## Teknologi
 
@@ -28,7 +29,7 @@ Dibangun dengan React + TypeScript + Vite + Tailwind CSS + shadcn/ui, dengan Sup
 - **React Router 7**, **React Hook Form + Zod**, **Recharts 3**, **sonner**
 - **ExcelJS** (lazy-loaded) untuk export laporan .xlsx berformat
 - **Supabase JS 2** (PostgreSQL + Row Level Security + RPC) + **Edge Functions** (Deno)
-- **Gemini API** (`gemini-3.5-flash-lite` via secret `GEMINI_MODEL`, function calling) untuk asisten data
+- **Gemini API** (`gemini-3.5-flash-lite` via secret `GEMINI_MODEL`, fallback `GEMINI_FALLBACK_MODEL`, retry otomatis saat overload, function calling) untuk asisten data
 - Code-splitting per halaman (React.lazy + Suspense)
 
 ## Prasyarat
@@ -135,6 +136,24 @@ npx supabase functions deploy chat
 **Biaya:** paket gratis Supabase menyertakan kuota Edge Function; Gemini
 free tier cukup untuk pemakaian admin harian.
 
+**Tool yang tersedia di asisten:**
+- `ringkasan_hari_ini` → kartu statistik hari ini (WIB).
+- `laporan_periode` → pendapatan untuk rentang tanggal tertentu.
+- `komisi_periode` → komisi karyawan untuk rentang tanggal tertentu.
+- `prediksi_omzet` → proyeksi omzet dengan Holt-Winters musiman mingguan.
+  Menerima `days` (21–365, default 60) dan `horizon` (1–30, default 7),
+  memanggil RPC `get_revenue_history` dengan token user, lalu mengembalikan
+  proyeksi per hari, total + pita ±1σ, dan metrik MAPE/MAE dari backtest.
+
+Contoh pertanyaan: *"Prediksi omzet 7 hari ke depan berapa?"* atau
+*"Coba ramalkan omzet bulan depan"*. Jika riwayat aktif kurang dari 21 hari,
+asisten menjawab bahwa data belum cukup untuk diprediksi.
+
+> Logika Holt-Winters sengaja ditaruh **di dalam `index.ts`** (bukan file
+> terpisah) agar deploy lewat **Cara A (dashboard editor)** tetap cukup
+> dengan menempel satu file. Karena itu, setiap kali mengubah fungsi ini,
+> **deploy ulang fungsi `chat`** — perubahan lokal tidak otomatis aktif.
+
 **Troubleshooting** — pesan error di panel chat dan artinya:
 - *"Tidak dapat menghubungi asisten... belum di-deploy"* → fungsi belum ada:
   cek **Edge Functions** — harus ada fungsi bernama persis `chat`
@@ -144,6 +163,14 @@ free tier cukup untuk pemakaian admin harian.
   atau kode template bawaan belum diganti seluruhnya).
 - *"GEMINI_API_KEY belum diatur"* → tambahkan secret di
   **Edge Functions → Secrets** lalu tunggu ±1 menit.
+- *"This model is currently experiencing high demand..."* → model Gemini
+  sedang overload (biasanya sementara). Fungsi kini **retry otomatis 2×**
+  (jeda 400 ms dan 1,2 detik), lalu **fallback ke `GEMINI_FALLBACK_MODEL`**
+  (default `gemini-2.5-flash`). Kalau tetap gagal, panel menampilkan pesan
+  ramah dan menyarankan mencoba lagi; **prediksi omzet di halaman Laporan
+  tetap bisa dipakai** karena dihitung di frontend tanpa Gemini.
+  Ganti model cadangan lewat secret `GEMINI_FALLBACK_MODEL` (kosongkan
+  untuk menonaktifkan), lalu deploy ulang fungsi `chat`.
 - *"This model ... is no longer available to new users"* → model Gemini yang
   dipakai sudah dihentikan Google. Ganti nama model TANPA edit kode:
   tambahkan secret `GEMINI_MODEL` = nama model terbaru (mis.
@@ -179,32 +206,96 @@ Menyalin template dashboard ke file lokal akan menimpa kode fungsi chat.
 
 ---
 
+## 6. Akun Admin: Ganti Email, Password & Pemulihan Akun
+
+**Lokasi pengaturan:** menu akun di topbar (kanan atas) → **Ganti Email** / **Ganti Password**.
+- Ganti password memverifikasi password lama terlebih dahulu.
+- Ganti email mengirim tautan konfirmasi ke alamat baru; email baru berlaku
+  setelah tautan diklik.
+
+### Lupa password (self-service)
+
+1. Halaman login → tombol **Lupa password?** di samping label Password.
+2. Isi email akun → Supabase mengirim tautan reset. Pesan UI selalu netral
+   ("jika email terdaftar, tautan telah dikirim") untuk mencegah penebakan
+   email terdaftar.
+3. Klik tautan di email → aplikasi membuka **`/reset-password`** dengan sesi
+   recovery sementara (event `PASSWORD_RECOVERY`).
+4. Isi password baru + konfirmasi (minimal 8 karakter) → simpan.
+5. Semua sesi lain diputus dan Anda diminta login ulang dengan password baru.
+   Selama sesi recovery aktif, area admin tidak bisa dibuka.
+
+**Konfigurasi Supabase yang wajib** (tanpa ini tautan tidak kembali ke aplikasi):
+- **Authentication → URL Configuration**
+  - `Site URL`: `http://localhost:5173` (dev) atau domain produksi
+  - `Redirect URLs`: tambahkan `http://localhost:5173/reset-password` dan
+    `https://domain-anda/reset-password`
+- Template email **Reset Password** (Authentication → Emails → Email
+  Templates) memakai `{{ .ConfirmationURL }}` secara default — tidak perlu
+  diubah.
+
+### Lupa email (manual)
+
+Email adalah identitas login, jadi tidak ada pemulihan mandiri:
+1. Supabase Dashboard → **Authentication → Users** — email terdaftar terlihat
+   di sini (termasuk email baru setelah konfirmasi).
+2. Reset password manual: menu **⋯** pada user → *Reset password* / kirim
+   tautan recovery ke email terdaftar.
+3. Email lama tidak bisa diakses? Gunakan menu ubah email pada user tersebut
+   dengan opsi *auto confirm*, atau buat akun admin baru.
+
+### Batas email & SMTP sendiri
+
+- Layanan email bawaan Supabase dibatasi **2 email/jam per proyek** (bukan per
+  pengguna) dan hanya mengirim ke alamat **anggota tim proyek** Supabase.
+  Permintaan tautan reset dan konfirmasi ganti email sama-sama memakai kuota
+  ini.
+- Jika opsi **Secure email change** aktif (Authentication → Sign In /
+  Providers → Email), satu permintaan ganti email mengirim **2 email** (email
+  lama + baru) sehingga kuota sejam langsung habis.
+- Error `429 over_email_send_rate_limit` ("email rate limit exceeded") muncul
+  saat kuota habis → tunggu ±1 jam. Error "For security purposes, you can only
+  request this after N seconds" → tunggu N detik (jeda 60 detik per alamat).
+- Solusi permanen: pasang **SMTP sendiri** di **Authentication → Emails →
+  SMTP Settings** (Resend, Brevo, SendGrid, dll.) → batas awal 30 email/jam
+  dan dapat diatur di **Authentication → Rate Limits**. Contoh isian: host
+  `smtp-relay.brevo.com`, port `587`, username email akun Brevo, password SMTP
+  key, sender email yang sudah diverifikasi di provider. Untuk pengembangan
+  lokal, `supabase start` memakai Mailpit tanpa batas per jam.
+
+---
+
 ## Struktur Proyek
 
 ```
 src/
 ├── components/
+│   ├── account/             # AccountSettingsDialog (ganti email & password),
+│   │                        # ForgotPasswordDialog (lupa password)
 │   ├── pos/                 # ServiceCard, CheckoutConfirmDialog, CheckoutSuccessDialog, Receipt
 │   ├── history/             # CancelTransactionDialog
 │   ├── employees/           # EmployeeFormDialog
 │   ├── reports/             # RevenueForecastCard (prediksi omzet)
 │   ├── chat/                # ChatWidget (asisten data Gemini)
-│   ├── shared/              # PageHeader, StatCard, EmptyState, ErrorState, badges, FullScreenLoader
+│   ├── shared/              # PageHeader, StatCard, EmptyState, ErrorState, badges,
+│   │                        # FullScreenLoader, PasswordField
 │   ├── ui/                  # komponen shadcn/ui
-│   ├── ProtectedRoute.tsx   # guard sesi admin
+│   ├── ProtectedRoute.tsx   # guard sesi admin (+ alihkan sesi recovery ke /reset-password)
 │   └── AppErrorBoundary.tsx # batas error aplikasi
-├── hooks/                   # useAuth, useDashboard, usePosCart, usePosServices,
+├── hooks/                   # useAuth (sesi + status recovery), useTheme (mode pagi/malam),
+│                            # useChartColors, useDashboard, usePosCart, usePosServices,
 │                            # useTransactions, useReport, useForecast, useEmployees,
 │                            # useCommissionReport, useDebouncedValue
 ├── layouts/AdminLayout.tsx  # sidebar rail hover-expand (lg+) + drawer (mobile) + topbar
 ├── lib/                     # supabase.ts, format.ts (WIB), constants.ts, periods.ts, csv.ts,
 │                            # forecast.ts (Holt-Winters + MAPE), validators.ts, errors.ts
-├── pages/                   # Dashboard, Pos, Services, Employees, History, HistoryDetail,
-│                            # Commissions, Reports, Login, NotFound
+├── pages/                   # Dashboard, Pos, Queue, Services, Employees, History,
+│                            # HistoryDetail, Commissions, Reports, Login,
+│                            # ResetPassword, NotFound
 ├── services/                # transaction.service.ts, services.service.ts, employee.service.ts,
 │                            # commission.service.ts, auth.service.ts
 └── types/database.types.ts  # tipe hasil skema & RPC
-supabase/migrations/         # 8 file SQL (schema → RLS → RPC → seed → karyawan → komisi → prediksi → WhatsApp)
+supabase/migrations/         # 9 file SQL (schema → RLS → RPC → seed → karyawan → komisi → prediksi → WhatsApp → antrian)
 supabase/functions/chat/     # Edge Function asisten data (Deno, Gemini function calling)
 ```
 
@@ -392,6 +483,8 @@ diambil dari 7 hari terakhir untuk perkiraan menunggu.
 - [ ] "Berapa pendapatan hari ini?" → jawaban memakai angka riil dari `get_dashboard_summary` (WIB).
 - [ ] "Komisi minggu ini?" → jawaban dari `get_commission_report` (Senin–hari ini).
 - [ ] "Pendapatan bulan ini?" → jawaban dari `get_report` (tanggal 1 s.d. hari ini).
+- [ ] "Prediksi omzet 7 hari ke depan?" → jawaban dari tool `prediksi_omzet` (Holt-Winters, WIB) beserta total, kisaran ±1σ, dan MAPE/MAE.
+- [ ] Data < 21 hari aktif → asisten menjawab "data belum cukup untuk diprediksi", bukan error/crash.
 - [ ] Tombol reset menghapus percakapan; ikon mengetik muncul saat menunggu.
 - [ ] Tanpa secret `GEMINI_API_KEY` → pesan error ramah ("belum diatur"), bukan crash.
 

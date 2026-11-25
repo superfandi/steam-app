@@ -1,5 +1,5 @@
 -- ============================================================================
--- Pandawa Steam - 004_seed.sql
+-- Mtwo Steam - 004_seed.sql
 -- Data awal: contoh layanan pencucian motor & mobil.
 -- Idempotent: aman dijalankan ulang (ON CONFLICT DO NOTHING).
 -- ============================================================================

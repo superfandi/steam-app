@@ -1,5 +1,5 @@
 -- ============================================================================
--- Pandawa Steam - 003_functions_rpc.sql
+-- Mtwo Steam - 003_functions_rpc.sql
 -- Fungsi database (RPC):
 --   1. create_transaction      : transaksi atomik + nomor invoice unik.
 --                                Harga WAJIB diambil dari tabel services.
